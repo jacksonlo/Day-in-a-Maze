@@ -9,11 +9,26 @@ public class MazeGenerator : MonoBehaviour {
 	public int mazeY;
 	public int mazeZ;
 
-	private Maze maze;
+	private int _width = 1;
+
+	//private Maze maze;
 
 	// Use this for initialization
 	void Start () {
 		GenerateMaze ();
+
+		// Instantiate Blocks in maze
+//		GameObject _block = block;
+//		int _width = 1;
+//		GameObject[, ,] maze = new GameObject[mazeX, mazeY, mazeZ];
+//
+//		for (int i = 0; i < mazeX; ++i) {
+//			for (int j = 0; j < mazeY; ++j) {
+//				for (int k = 0; k < mazeZ; ++k) {
+//					maze[i, j, k] = Instantiate (_block, new Vector3(i * _width, j * _width, k * _width), Quaternion.identity) as GameObject;
+//				}
+//			}
+//		}
 	}
 	
 	// Update is called once per frame
@@ -23,21 +38,36 @@ public class MazeGenerator : MonoBehaviour {
 
 	// Method to Generate Maze
 	void GenerateMaze() {
-		maze = new Maze (block, mazeX, mazeY, mazeZ);
+		//maze = new Maze (block, mazeX, mazeY, mazeZ);
 
 		// Growing Tree algorithm
 		bool[, ,] blockMap = new bool[mazeX, mazeY, mazeZ];
+		GameObject[, ,] maze = new GameObject[mazeX, mazeY, mazeZ];
+
+		//Initialize to false
+		for (int i = 0; i < mazeX; ++i) {
+			for (int j = 0; j < mazeY; ++j) {
+				for (int k = 0; k < mazeZ; ++k) {
+					blockMap [i, j, k] = false;
+				}
+			}
+		}
 
 		// Get random starting cell
 		int x = Random.Range (0, mazeX);
 		int y = Random.Range (0, mazeY);
 		int z = Random.Range (0, mazeZ);
 
-		List<Tuple3> cellList = new List<Tuple3>();
+ 		List<Tuple3> cellList = new List<Tuple3>();
 		Tuple3 currentCell = new Tuple3 (x, y, z);
 		cellList.Add (currentCell);
 
 		while (true) {
+			// Terminate if cellList is empty
+			if (cellList.Count == 0) {
+				break;
+			}
+				
 			x = currentCell.first;
 			y = currentCell.second;
 			z = currentCell.third;
@@ -49,63 +79,69 @@ public class MazeGenerator : MonoBehaviour {
 			List<Tuple3> neighbours = new List<Tuple3>();
 
 			// Top
-			if (!blockMap [x, y + 1, z]) {
+			if (y + 1 < mazeY && !blockMap [x, y + 1, z]) {
 				neighbours.Add (new Tuple3(x, y + 1, z));
 			}
 
 			// Front
-			if (!blockMap [x, y, z + 1]) {
+			if (z + 1 < mazeZ && !blockMap [x, y, z + 1]) {
 				neighbours.Add (new Tuple3(x, y, z + 1));
 			}
 
 			// Bottom
-			if (!blockMap [x, y - 1, z]) {
+			if (y - 1 >= 0 && !blockMap [x, y - 1, z]) {
 				neighbours.Add (new Tuple3(x, y - 1, z));
 			}
 
 			// Left
-			if (!blockMap [x - 1, y, z]) {
+			if (x - 1 >= 0 && !blockMap [x - 1, y, z]) {
 				neighbours.Add (new Tuple3(x - 1, y, z));
 			}
 
 			// Right
-			if (!blockMap [x + 1, y, z]) {
+			if (x + 1 < mazeX && !blockMap [x + 1, y, z]) {
 				neighbours.Add (new Tuple3(x + 1, y, z));
 			}
 
 			// Back
-			if (!blockMap [x, y, z - 1]) {
+			if (z - 1 >= 0 && !blockMap [x, y, z - 1]) {
 				neighbours.Add (new Tuple3(x, y, z - 1));
 			}
 
 			// Bottom
-			if (!blockMap [x, y - 1, z]) {
+			if (y - 1 >= 0 && !blockMap [x, y - 1, z]) {
 				neighbours.Add (new Tuple3(x, y - 1, z));
 			}
 
 			// If no neighbours, remove cell
 			if (neighbours.Count == 0) {
-				cellList.Remove (currentCell);
+				//cellList.Remove (currentCell);
+				for (int i = 0; i < cellList.Count; ++i) {
+					if (cellList [i].first == currentCell.first && cellList[i].second == currentCell.second && cellList[i].third == currentCell.third) {
+						cellList.RemoveAt (i);
+						break;
+					}
+				}
+
+				if (cellList.Count == 0) {
+					break;
+				}
+
+				currentCell = cellList [cellList.Count - 1];
 				continue;
 			}
 
-			// Terminate if cellList is empty
-			if (cellList.Count == 0) {
-				break;
-			}
-
 			// Pick a (random) neighbour and add to cellList
-			Tuple3 n = neighbours[Random.Range(0, neighbours.Count)];
-			cellList.Add (n);
-			currentCell = n;
+			currentCell = neighbours[Random.Range(0, neighbours.Count)];
+			cellList.Add (currentCell);
 		}	
 
 		// Instantiate Blocks in maze
-		for (int i = 0; i < x; ++i) {
-			for (int j = 0; j < y; ++j) {
-				for (int k = 0; k < z; ++k) {
+		for (int i = 0; i < mazeX; ++i) {
+			for (int j = 0; j < mazeY; ++j) {
+				for (int k = 0; k < mazeZ; ++k) {
 					if(!blockMap[i, j, k]) {
-						maze.createBlock (i, j, k);
+						maze[i, j, k] = Instantiate (block, new Vector3(i * _width, j * _width, k * _width), Quaternion.identity) as GameObject;
 					}
 				}
 			}
@@ -125,8 +161,7 @@ public class MazeGenerator : MonoBehaviour {
 			third = c;
 		}
 
-		public override bool Equals (object obj)
-		{
+		public override bool Equals (object obj) {
 			// Check for null values and compare run-time types.
 			if (obj == null || GetType() != obj.GetType()) 
 				return false;
@@ -136,7 +171,11 @@ public class MazeGenerator : MonoBehaviour {
 		}
 
 		public override int GetHashCode() {
-			return (first * 139 + second) * 149 + third;
+			int hash = 17;
+			hash = hash * 23 + first.GetHashCode();
+			hash = hash * 23 + second.GetHashCode();
+			hash = hash * 23 + third.GetHashCode();
+			return hash;
 		}
 	}
 
