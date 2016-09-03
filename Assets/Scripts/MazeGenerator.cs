@@ -62,12 +62,7 @@ public class MazeGenerator : MonoBehaviour {
 		Tuple3 currentCell = new Tuple3 (x, y, z);
 		cellList.Add (currentCell);
 
-		while (true) {
-			// Terminate if cellList is empty
-			if (cellList.Count == 0) {
-				break;
-			}
-				
+		while (cellList.Count > 0) {
 			x = currentCell.first;
 			y = currentCell.second;
 			z = currentCell.third;
@@ -75,7 +70,7 @@ public class MazeGenerator : MonoBehaviour {
 			// Define true as empty space, false default as block
 			blockMap [x, y, z] = true;
 
-			// Get Unvisited Neighbours
+			// Get Unvisited Valid Neighbours
 			List<Tuple3> neighbours = new List<Tuple3>();
 
 			// Top
@@ -113,6 +108,49 @@ public class MazeGenerator : MonoBehaviour {
 				neighbours.Add (new Tuple3(x, y - 1, z));
 			}
 
+			// Check each of the selected neighbours if valid (doesn't create a block of 4 in any dimension)
+			for (int i = 0; i < neighbours.Count; ++i) {
+				Tuple3 check = neighbours [i];
+
+				// Check for 2x2 squares on all 3 axis
+				int xa = check.first;
+				int ya = check.second;
+				int za = check.third;
+
+				// Check on XY axis
+				bool topLeft = blockMap [xa, ya, za] && blockMap[xa, ya + 1, za] && blockMap[xa - 1, ya, za] && blockMap[xa - 1, ya + 1, za];
+				bool topRight = blockMap [xa, ya, za] && blockMap [xa, ya + 1, za] && blockMap [xa + 1, ya, za] && blockMap [xa + 1, ya + 1, za];
+				bool botLeft = blockMap [xa, ya, za] && blockMap [xa, ya - 1, za] && blockMap [xa - 1, ya, za] && blockMap [xa - 1, ya - 1, za];
+				bool botRight = blockMap [xa, ya, za] && blockMap [xa, ya - 1, za] && blockMap [xa + 1, ya, za] && blockMap [xa + 1, ya - 1, za];
+				if (topLeft || topRight || botLeft || botRight) {
+					neighbours.RemoveAt (i);
+					i -= 1;
+					continue;
+				}
+
+				// Check on XZ axis
+				topLeft = blockMap [xa, ya, za] && blockMap[xa, ya, za + 1] && blockMap[xa - 1, ya, za] && blockMap[xa - 1, ya, za + 1];
+				topRight = blockMap [xa, ya, za] && blockMap [xa, ya, za + 1] && blockMap [xa + 1, ya, za] && blockMap [xa + 1, ya, za + 1];
+				botLeft = blockMap [xa, ya, za] && blockMap [xa, ya, za - 1] && blockMap [xa - 1, ya, za] && blockMap [xa - 1, ya, za - 1];
+				botRight = blockMap [xa, ya, za] && blockMap [xa, ya, za - 1] && blockMap [xa + 1, ya, za] && blockMap [xa + 1, ya, za - 1];
+				if (topLeft || topRight || botLeft || botRight) {
+					neighbours.RemoveAt (i);
+					i -= 1;
+					continue;
+				}
+
+				// Check on YZ axis
+				topLeft = blockMap [xa, ya, za] && blockMap[xa, ya, za + 1] && blockMap[xa, ya - 1, za] && blockMap[xa, ya - 1, za + 1];
+				topRight = blockMap [xa, ya, za] && blockMap [xa, ya, za + 1] && blockMap [xa, ya + 1, za] && blockMap [xa, ya + 1, za + 1];
+				botLeft = blockMap [xa, ya, za] && blockMap [xa, ya, za - 1] && blockMap [xa, ya - 1, za] && blockMap [xa, ya - 1, za - 1];
+				botRight = blockMap [xa, ya, za] && blockMap [xa, ya, za - 1] && blockMap [xa, ya + 1, za] && blockMap [xa, ya + 1, za - 1];
+				if (topLeft || topRight || botLeft || botRight) {
+					neighbours.RemoveAt (i);
+					i -= 1;
+					continue;
+				}
+			}
+
 			// If no neighbours, remove cell
 			if (neighbours.Count == 0) {
 				//cellList.Remove (currentCell);
@@ -137,6 +175,7 @@ public class MazeGenerator : MonoBehaviour {
 		}	
 
 		// Instantiate Blocks in maze
+		// add tracking of neighbours above and then generate here with respect to neighbours (add 1 cube size walls between)
 		for (int i = 0; i < mazeX; ++i) {
 			for (int j = 0; j < mazeY; ++j) {
 				for (int k = 0; k < mazeZ; ++k) {
@@ -176,6 +215,29 @@ public class MazeGenerator : MonoBehaviour {
 			hash = hash * 23 + second.GetHashCode();
 			hash = hash * 23 + third.GetHashCode();
 			return hash;
+		}
+	}
+
+	// Generic Tuple2 Implemention
+	public class Tuple2 {
+		public int first { get; set; }
+		public int second { get; set; }
+
+		public Tuple2(int a, int b) {
+			first = a;
+			second = b;
+		}
+
+		public override bool Equals(object obj) {
+			if (obj == null || GetType() != obj.GetType()) 
+				return false;
+
+			Tuple2 t = (Tuple2)obj;
+			return (first == t.first) && (second == t.second);
+		}
+
+		public override int GetHashCode() {
+			return first ^ second;
 		}
 	}
 
