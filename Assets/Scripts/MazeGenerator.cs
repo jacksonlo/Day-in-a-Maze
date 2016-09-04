@@ -42,14 +42,14 @@ public class MazeGenerator : MonoBehaviour {
 		}
 
 		// Get random starting cell
-//		int x = Random.Range (0, mazeX);
-//		int y = Random.Range (0, mazeY);
-//		int z = Random.Range (0, mazeZ);
+		int x = Random.Range (0, mazeX);
+		int y = Random.Range (0, mazeY);
+		int z = Random.Range (0, mazeZ);
 
 		// Choose bottom back left as starting cell
-		int x = 0;
-		int y = 0;
-		int z = 0;
+//		int x = 0;
+//		int y = 0;
+//		int z = 0;
 
 		List<Tuple3> blockList = new List<Tuple3>();
 		blockList.Add (new Tuple3 (x, y, z));
