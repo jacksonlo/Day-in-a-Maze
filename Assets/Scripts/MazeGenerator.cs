@@ -9,12 +9,13 @@ public class MazeGenerator : MonoBehaviour {
 	public int mazeY;
 	public int mazeZ;
 
-	private int _width = 2;
+	private float _width;
 
 	//private Maze maze;
 
 	// Use this for initialization
 	void Start () {
+		_width = block.transform.lossyScale.x;
 		GenerateMaze ();
 	}
 
