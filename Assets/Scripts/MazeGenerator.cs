@@ -9,26 +9,13 @@ public class MazeGenerator : MonoBehaviour {
 	public int mazeY;
 	public int mazeZ;
 
-	private int _width = 1;
+	private int _width = 2;
 
 	//private Maze maze;
 
 	// Use this for initialization
 	void Start () {
 		GenerateMaze ();
-
-		// Instantiate Blocks in maze
-		//		GameObject _block = block;
-		//		int _width = 1;
-		//		GameObject[, ,] maze = new GameObject[mazeX, mazeY, mazeZ];
-		//
-		//		for (int i = 0; i < mazeX; ++i) {
-		//			for (int j = 0; j < mazeY; ++j) {
-		//				for (int k = 0; k < mazeZ; ++k) {
-		//					maze[i, j, k] = Instantiate (_block, new Vector3(i * _width, j * _width, k * _width), Quaternion.identity) as GameObject;
-		//				}
-		//			}
-		//		}
 	}
 
 	// Update is called once per frame
