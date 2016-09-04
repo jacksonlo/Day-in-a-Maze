@@ -4,18 +4,20 @@ using System.Collections.Generic;
 
 public class MazeGenerator : MonoBehaviour {
 
-	public GameObject block;
+	public GameObject[] blockTypes;
 	public int mazeX;
 	public int mazeY;
 	public int mazeZ;
 
 	private float _width;
 
-	//private Maze maze;
+	enum BlockType {Metal, White};
+
+	private GrowingTreeMaze maze;
 
 	// Use this for initialization
 	void Start () {
-		_width = block.transform.lossyScale.x;
+		_width = blockTypes[0].transform.lossyScale.x;
 		GenerateMaze ();
 	}
 
@@ -26,30 +28,13 @@ public class MazeGenerator : MonoBehaviour {
 
 	// Method to Generate Maze
 	void GenerateMaze() {
-		//maze = new Maze (block, mazeX, mazeY, mazeZ);
-
-		// Growing Tree algorithm
-		bool[, ,] blockMap = new bool[mazeX, mazeY, mazeZ];
-		GameObject[, ,] maze = new GameObject[mazeX, mazeY, mazeZ];
-
-		//Initialize to false
-		for (int i = 0; i < mazeX; ++i) {
-			for (int j = 0; j < mazeY; ++j) {
-				for (int k = 0; k < mazeZ; ++k) {
-					blockMap [i, j, k] = false;
-				}
-			}
-		}
-
 		// Get random starting cell
 		int x = Random.Range (0, mazeX);
 		int y = Random.Range (0, mazeY);
 		int z = Random.Range (0, mazeZ);
 
-		// Choose bottom back left as starting cell
-//		int x = 0;
-//		int y = 0;
-//		int z = 0;
+		// Growing Tree algorithm
+		maze = new GrowingTreeMaze (blockTypes, new Tuple3(mazeX, mazeY, mazeZ), new Tuple3(x, y, z));
 
 		List<Tuple3> blockList = new List<Tuple3>();
 		blockList.Add (new Tuple3 (x, y, z));
@@ -62,20 +47,10 @@ public class MazeGenerator : MonoBehaviour {
 			z = currentCell.third;
 
 			// Define true as empty space, false default as block
-			blockMap [x, y, z] = true;
+			maze.Carve(x, y, z);
 
 			// Get Unvisited Valid Neighbours
-			List<Tuple3> neighbours = GetPotentialNeighbours (blockMap, x, y, z);
-
-			// Check if neighbours are valid, ie. it has no neighbouring cells that are already carved
-			for (int i = 0; i < neighbours.Count; ++i) {
-				Tuple3 n = neighbours [i];
-				List<Tuple3> nn = GetAllNeighbours (blockMap, n.first, n.second, n.third);
-				if (nn.Count != 1 || nn [0] == n) {
-					neighbours.RemoveAt (i);
-					i -= 1;
-				}
-			}
+			List<Tuple3> neighbours = maze.GetPotentialNeighbours(x, y, z);
 
 			// If no neighbours, remove cell
 			if (neighbours.Count == 0) {
@@ -90,123 +65,266 @@ public class MazeGenerator : MonoBehaviour {
 			}
 
 			// Pick a (random) neighbour
-			currentCell = neighbours[Random.Range(0, neighbours.Count)];
+			Tuple3 newCell = neighbours[Random.Range(0, neighbours.Count)];
 
 			// Carve to it
-			int xdiff = currentCell.first - x;
-			int ydiff = currentCell.second - y;
-			int zdiff = currentCell.third - z;
-
-			if (xdiff != 0) {
-				if (xdiff > 0) { //To the right
-					blockMap[x + 1, y, z] = true;
-				} else { //To the left
-					blockMap[x - 1, y, z] = true;
-				}
-			} else if (ydiff != 0) {
-				if (ydiff > 0) { //Up
-					blockMap[x, y + 1, z] = true;
-				} else { //Down
-					blockMap [x, y - 1, z] = true;
-				}
-			} else { //if (zdiff != 0) {
-				if (zdiff > 0) { //Towards screen
-					blockMap[x, y, z + 1] = true;
-				} else { //Away 
-					blockMap[x, y, z - 1] = true;
-				}
-			}
+			maze.CarveTo(currentCell, newCell);
 
 			// Add it to cell list
-			blockList.Add (currentCell);
+			blockList.Add (newCell);
 		}	
 
 		// Instantiate Blocks in maze
-		for (int i = 0; i < mazeX; ++i) {
-			for (int j = 0; j < mazeY; ++j) {
-				for (int k = 0; k < mazeZ; ++k) {
-					if(!blockMap[i, j, k]) {
-						maze[i, j, k] = Instantiate (block, new Vector3(i * _width, j * _width, k * _width), Quaternion.identity) as GameObject;
+		maze.InstantiateMaze();
+	}
+
+	#region Growing Tree Maze
+	public class GrowingTreeMaze : Maze {
+		public List<Tuple3> GetPotentialNeighbours(int x, int y, int z) {
+			List<Tuple3> neighbours = base.GetBlockNeighbours (x, y, z);
+
+			// Check if neighbours are valid, ie. it has no neighbouring cells that are already carved
+			for (int i = 0; i < neighbours.Count; ++i) {
+				Tuple3 n = neighbours [i];
+				if (base.HasSpaceNeighbours (n.first, n.second, n.third)) {
+					neighbours.RemoveAt (i--);
+				}
+			}
+
+			return neighbours;
+		}	
+	}
+	#endregion
+
+	#region Maze Class Definition
+	public class Maze {
+		private Tuple3 _mazeDimensions;		// Maze Dimensions
+		private Tuple3 _startingPosition; 	// Coordinates for bottom far left of the cube maze
+		private Block[, ,] _blockMaze;		// 3D array of actual blocks of the maze
+		private bool[, ,] _blockMap;		// 3D array of which block locations, false = block, true = empty space
+		private GameObject[] _blockTypes;
+		private float _width;
+
+		// Constructor
+		public Maze(GameObject[] blockTypes, Tuple3 dimensions, Tuple3 bottomFarLeft) {
+			_mazeDimensions = dimensions;
+			_startingPosition = bottomFarLeft;
+			_blockTypes = blockTypes;
+
+			_blockMaze = new Block[_mazeDimensions.first, _mazeDimensions.second, _mazeDimensions.third];
+		}
+
+		// Instantiate Maze Block GameObjects into the world
+		public void InstantiateMaze() {
+			for (int i = 0; i < mazeX; ++i) {
+				for (int j = 0; j < mazeY; ++j) {
+					for (int k = 0; k < mazeZ; ++k) {
+						if(!_blockMap[i, j, k]) {
+							_blockMaze[i, j, k] = Instantiate (_blockTypes[BlockType.Metal], new Vector3(i * _width, j * _width, k * _width), Quaternion.identity) as GameObject;
+						}
 					}
 				}
 			}
 		}
 
+		// Mark's a space on the blockMap as empty (carve)
+		public bool Carve(int x, int y, int z) {
+			if(x >= 0 && x < _mazeX && y >= 0 && y < _mazeY && z >= 0 && z < _mazeZ) {
+				_blockMap [x, y, z] = true;
+				return true;
+			}
+			return false;
+		}
+		public bool Carve(Tuple3 location) {
+			return Carve (location.first, location.second, location.third);
+		}
+
+		// Carve to a location (Since 1 block thickness between each carveable block)
+		public bool CarveTo(Tuple3 from, Tuple3 to) {
+			int xdiff = to.first - from.first;
+			int ydiff = to.second - from.second;
+			int zdiff = to.third - from.third;
+
+			if (xdiff != 0) {
+				if (xdiff > 0) { //To the right
+					_blockMap[from.first + 1, from.second, from.third] = true;
+				} else { //To the left
+					_blockMap[from.first - 1, from.second, from.third] = true;
+				}
+			} else if (ydiff != 0) {
+				if (ydiff > 0) { //Up
+					_blockMap[from.first, from.second + 1, from.third] = true;
+				} else { //Down
+					_blockMap [from.first, from.second - 1, from.third] = true;
+				}
+			} else { //if (zdiff != 0) {
+				if (zdiff > 0) { //Towards screen
+					_blockMap[from.first, from.second, from.third + 1] = true;
+				} else { //Away 
+					_blockMap[from.first, from.second, from.third - 1] = true;
+				}
+			}
+			return true;
+		}
+
+		// Create a block at the given coordinates, given a block type
+		public bool CreateBlock(int blockType, int x, int y, int z) {
+			if (x > _mazeX || y > _mazeY || z > _mazeZ) {
+				return false;
+			}
+
+			_blockMaze [x, y, z] = new Block (_blockTypes[blockType], x, y, z);
+			return true;
+		}
+		public bool CreateBlock(int blockType, Tuple3 location) {
+			return CreateBlock (blockType, location.first, location.second, location.third);
+		}
+
+		// Place a given block type at the given coordinates
+		public bool PlaceBlock(Block b, int x, int y, int z) {
+			if (x > _mazeX || y > _mazeY || z > _mazeZ) {
+				return false;
+			}
+
+			_blockMaze [x, y, z] = b;
+			return true;
+		}
+
+		// Get all neighbours that are spaces
+		public List<Tuple3> GetSpaceNeighbours(int x, int y, int z) {
+			List<Tuple3> neighbours = new List<Tuple3> ();
+
+			// Top
+			if (y + 2 < mazeY && _blockMap [x, y + 2, z]) {
+				neighbours.Add (new Tuple3(x, y + 2, z));
+			}
+
+			// Front
+			if (z + 2 < mazeZ && _blockMap [x, y, z + 2]) {
+				neighbours.Add (new Tuple3(x, y, z + 2));
+			}
+
+			// Bottom
+			if (y - 2 >= 0 && _blockMap [x, y - 2, z]) {
+				neighbours.Add (new Tuple3(x, y - 2, z));
+			}
+
+			// Left
+			if (x - 2 >= 0 && _blockMap [x - 2, y, z]) {
+				neighbours.Add (new Tuple3(x - 2, y, z));
+			}
+
+			// Right
+			if (x + 2 < mazeX && _blockMap [x + 2, y, z]) {
+				neighbours.Add (new Tuple3(x + 2, y, z));
+			}
+
+			// Back
+			if (z - 2 >= 0 && _blockMap [x, y, z - 2]) {
+				neighbours.Add (new Tuple3(x, y, z - 2));
+			}
+
+			return neighbours;
+		}
+
+		// Returns true if the location has neighbours that are spaces
+		public bool HasSpaceNeighbours(int x, int y, int z) {
+			// Top
+			if (y + 2 < mazeY && _blockMap [x, y + 2, z]) {
+				return true;
+			}
+
+			// Front
+			if (z + 2 < mazeZ && _blockMap [x, y, z + 2]) {
+				return true;
+			}
+
+			// Bottom
+			if (y - 2 >= 0 && _blockMap [x, y - 2, z]) {
+				return true;
+			}
+
+			// Left
+			if (x - 2 >= 0 && _blockMap [x - 2, y, z]) {
+				return true;
+			}
+
+			// Right
+			if (x + 2 < mazeX && _blockMap [x + 2, y, z]) {
+				return true;
+			}
+
+			// Back
+			if (z - 2 >= 0 && _blockMap [x, y, z - 2]) {
+				return true;
+			}
+
+			return false;
+		}
+
+		// Get's all neighbours that are blocks
+		public List<Tuple3> GetBlockNeighbours(int x, int y, int z) {
+			List<Tuple3> neighbours = new List<Tuple3> ();
+
+			// Top
+			if (y + 2 < mazeY && !_blockMap [x, y + 2, z]) {
+				neighbours.Add (new Tuple3(x, y + 2, z));
+			}
+
+			// Front
+			if (z + 2 < mazeZ && !_blockMap [x, y, z + 2]) {
+				neighbours.Add (new Tuple3(x, y, z + 2));
+			}
+
+			// Bottom
+			if (y - 2 >= 0 && !_blockMap [x, y - 2, z]) {
+				neighbours.Add (new Tuple3(x, y - 2, z));
+			}
+
+			// Left
+			if (x - 2 >= 0 && !_blockMap [x - 2, y, z]) {
+				neighbours.Add (new Tuple3(x - 2, y, z));
+			}
+
+			// Right
+			if (x + 2 < mazeX && !_blockMap [x + 2, y, z]) {
+				neighbours.Add (new Tuple3(x + 2, y, z));
+			}
+
+			// Back
+			if (z - 2 >= 0 && !_blockMap [x, y, z - 2]) {
+				neighbours.Add (new Tuple3(x, y, z - 2));
+			}
+
+			return neighbours;
+		}
+			
 	}
+	#endregion
 
-	public List<Tuple3> GetPotentialNeighbours(bool[, ,] blockMap, int x, int y, int z) {
-		List<Tuple3> neighbours = new List<Tuple3> ();
+	#region Block Class Definition
+	public class Block {
+		public int x { get; set; }
+		public int y { get; set; }
+		public int z { get; set; }
 
-		// Top
-		if (y + 2 < mazeY && !blockMap [x, y + 2, z]) {
-			neighbours.Add (new Tuple3(x, y + 2, z));
+		private GameObject _blockType;
+		private float _width;
+
+		public Block(GameObject blockType, int x, int y, int z) {
+			this.x = x;
+			this.y = y;
+			this.z = z;
+			_blockType = blockType;
+			_width = blockType.transform.lossyScale.x;
+
+			_blockType = Instantiate (_blockType, new Vector3(x * _width, y * _width, z * _width), Quaternion.identity) as GameObject;
 		}
 
-		// Front
-		if (z + 2 < mazeZ && !blockMap [x, y, z + 2]) {
-			neighbours.Add (new Tuple3(x, y, z + 2));
-		}
-
-		// Bottom
-		if (y - 2 >= 0 && !blockMap [x, y - 2, z]) {
-			neighbours.Add (new Tuple3(x, y - 2, z));
-		}
-
-		// Left
-		if (x - 2 >= 0 && !blockMap [x - 2, y, z]) {
-			neighbours.Add (new Tuple3(x - 2, y, z));
-		}
-
-		// Right
-		if (x + 2 < mazeX && !blockMap [x + 2, y, z]) {
-			neighbours.Add (new Tuple3(x + 2, y, z));
-		}
-
-		// Back
-		if (z - 2 >= 0 && !blockMap [x, y, z - 2]) {
-			neighbours.Add (new Tuple3(x, y, z - 2));
-		}
-
-		return neighbours;
 	}
+	#endregion
 
-	public List<Tuple3> GetAllNeighbours(bool[, ,] blockMap, int x, int y, int z) {
-		List<Tuple3> neighbours = new List<Tuple3> ();
-
-		// Top
-		if (y + 2 < mazeY && blockMap [x, y + 2, z]) {
-			neighbours.Add (new Tuple3(x, y + 2, z));
-		}
-
-		// Front
-		if (z + 2 < mazeZ && blockMap [x, y, z + 2]) {
-			neighbours.Add (new Tuple3(x, y, z + 2));
-		}
-
-		// Bottom
-		if (y - 2 >= 0 && blockMap [x, y - 2, z]) {
-			neighbours.Add (new Tuple3(x, y - 2, z));
-		}
-
-		// Left
-		if (x - 2 >= 0 && blockMap [x - 2, y, z]) {
-			neighbours.Add (new Tuple3(x - 2, y, z));
-		}
-
-		// Right
-		if (x + 2 < mazeX && blockMap [x + 2, y, z]) {
-			neighbours.Add (new Tuple3(x + 2, y, z));
-		}
-
-		// Back
-		if (z - 2 >= 0 && blockMap [x, y, z - 2]) {
-			neighbours.Add (new Tuple3(x, y, z - 2));
-		}
-
-		return neighbours;
-	}
-
-	// Generic Tuple3 Implementation
+	#region Tuple3 Definition
 	public class Tuple3 {
 		public int first { get; set; }
 		public int second { get; set; }
@@ -235,8 +353,9 @@ public class MazeGenerator : MonoBehaviour {
 			return hash;
 		}
 	}
+	#endregion
 
-	// Generic Tuple2 Implemention
+	#region Tuple2 Definition
 	public class Tuple2 {
 		public int first { get; set; }
 		public int second { get; set; }
@@ -258,60 +377,6 @@ public class MazeGenerator : MonoBehaviour {
 			return first ^ second;
 		}
 	}
-
-	// Maze Class
-	public class Maze {
-		private int _x, _y, _z;
-		private Block[, ,] _blocks;
-		private GameObject _block;
-		private float _width;
-
-		public Maze(GameObject block, int x, int y, int z) {
-			_x = x;
-			_y = y;
-			_z = z;
-			_block = block;
-
-			_blocks = new Block[x, y, z];
-		}
-
-		public bool createBlock(int x, int y, int z) {
-			if (x > _x || y > _y || z > _z) {
-				return false;
-			}
-
-			_blocks [x, y, z] = new Block (_block, x, y, z);
-			return true;
-		}
-
-		public bool placeBlock(Block b, int x, int y, int z) {
-			if (x > _x || y > _y || z > _z) {
-				return false;
-			}
-
-			_blocks [x, y, z] = b;
-			return true;
-		}
-	}
-
-	public class Block {
-		public int x { get; set; }
-		public int y { get; set; }
-		public int z { get; set; }
-
-		private GameObject _block;
-		private int _width;
-
-		public Block(GameObject block, int x, int y, int z) {
-			this.x = x;
-			this.y = y;
-			this.z = z;
-			_block = block;
-			_width = 2;
-
-			_block = Instantiate (_block, new Vector3(x * _width, y * _width, z * _width), Quaternion.identity) as GameObject;
-		}
-
-	}
+	#endregion
 
 }
