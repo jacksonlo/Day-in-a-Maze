@@ -4,21 +4,27 @@ using System.Collections.Generic;
 
 public class MazeGenerator : MonoBehaviour {
 
+	public Camera character;
 	public GameObject[] blockTypes;
+	public GameObject path;
 	public int mazeX;
 	public int mazeY;
 	public int mazeZ;
 
-	enum BlockType {Metal = 0, 
-					White = 1};
-	enum MazeType {GrowingTree};
+	private enum BlockType {Metal = 0, White = 1};
+	private enum MazeType {GrowingTree};
 
 	private List<Maze> mazeList;
 
 	// Use this for initialization
 	void Start () {
+		// Generate maze
 		mazeList = new List<Maze> ();
 		mazeList.Add(GenerateMaze (MazeType.GrowingTree));
+
+		// Build a path to entrance
+
+		//
 	}
 
 	// Update is called once per frame
@@ -33,9 +39,13 @@ public class MazeGenerator : MonoBehaviour {
 			GrowingTreeMaze maze;
 
 			// Get random starting cell
-			int x = Random.Range (0, mazeX);
-			int y = Random.Range (0, mazeY);
-			int z = Random.Range (0, mazeZ);
+//			int x = Random.Range (0, mazeX);
+//			int y = Random.Range (0, mazeY);
+//			int z = Random.Range (0, mazeZ);
+
+			int x = (int)Mathf.Ceil (mazeX / 2);
+			int y = (int)Mathf.Ceil (2 * mazeY / 3);
+			int z = 0;
 
 			// Growing Tree algorithm
 			maze = new GrowingTreeMaze (blockTypes, new Tuple3 (mazeX, mazeY, mazeZ), new Tuple3 (x, y, z));
@@ -43,8 +53,19 @@ public class MazeGenerator : MonoBehaviour {
 			// Calculate Maze
 			maze.CalculateMaze ();
 
+			// Choose an Exit
+			if (!maze.ChooseExit ()) {
+				Debug.Log ("Failed to choose an exit");
+			}
+
 			// Instantiate Blocks in maze
 			maze.InstantiateMaze ();
+
+			// Generate platforms to entrance and exit
+			maze.GenerateEntrancePath (path, 10f);
+			maze.GenerateExitPath (path, 5f);
+
+			// Move Character to entrance
 
 			return maze;
 			break;
@@ -123,19 +144,120 @@ public class MazeGenerator : MonoBehaviour {
 	#region Maze Class Definition
 	public class Maze {
 		protected Tuple3 _mazeDimensions;		// Maze Dimensions
-		protected Tuple3 _startingPosition; 	// Coordinates for bottom far left of the cube maze
+		protected Tuple3 _startingPosition; 	// Coordinates for startingPosition/entrance
+		protected Tuple3 _exitPosition;
+		protected BlockFace _exitDirection;
 		protected Block[, ,] _blockMaze;		// 3D array of actual blocks of the maze
 		protected bool[, ,] _blockMap;		// 3D array of which block locations, false = block, true = empty space
 		protected GameObject[] _blockTypes;
 
+		protected enum BlockFace {Left, Right, Back, Front, Bottom, Top};
+
 		// Constructor
-		public Maze(GameObject[] blockTypes, Tuple3 dimensions, Tuple3 bottomFarLeft) {
+		public Maze(GameObject[] blockTypes, Tuple3 dimensions, Tuple3 startingPosition) {
 			_mazeDimensions = dimensions;
-			_startingPosition = bottomFarLeft;
+			_startingPosition = startingPosition;
+			_exitPosition = null;
 			_blockTypes = blockTypes;
 
 			_blockMaze = new Block[_mazeDimensions.first, _mazeDimensions.second, _mazeDimensions.third];
 			_blockMap = new bool[_mazeDimensions.first, _mazeDimensions.second, _mazeDimensions.third];
+		}
+
+		// Generates platform to entrance
+		public virtual void GenerateEntrancePath(GameObject path, float length) {
+			float width = _blockTypes[0].transform.lossyScale.x;
+			for (int i = 0; i < length; ++i) {
+				Instantiate (path, new Vector3 (_startingPosition.first * width, _startingPosition.second * width - width + 1.25f, _startingPosition.third * width - i * width - 6.5f), Quaternion.identity);
+			}
+		}
+
+		// Generates platform out of exit
+		public virtual void GenerateExitPath(GameObject path, float length) {
+			float width = _blockTypes[0].transform.lossyScale.x;
+			Quaternion rotation = Quaternion.identity;
+			switch (_exitDirection) {
+			case BlockFace.Left:
+				rotation = Quaternion.Euler (0, 270, 0);
+				break;
+			case BlockFace.Right:
+				rotation = Quaternion.Euler (0, 90, 0);
+				break;
+			case BlockFace.Back:
+				rotation = Quaternion.identity;
+				break;
+			}
+
+			for (int i = 0; i < length; ++i) {
+				Instantiate (path, new Vector3 (_exitPosition.first * width, _exitPosition.second * width - width + 1.25f, _exitPosition.third * width + i * width - 6.5f), rotation);
+			}
+		}
+
+		// Returns entrance coordinates
+		public Tuple3 GetEntrance() {
+			return _startingPosition;
+		}
+
+		// Returns exit coordinates, must be called after ChooseExit
+		public Tuple3 GetExit() {
+			return _exitPosition;
+		}
+
+		// Chooses an exit
+		public virtual bool ChooseExit() {
+			List<Tuple3> candidateExits = new List<Tuple3> ();
+
+			// Opposite Wall
+			for (int i = 0; i < _mazeDimensions.first; ++i) {
+				for (int j = 0; j < _mazeDimensions.second; ++j) {
+					if (_blockMap [i, j, _mazeDimensions.third - 1]) {
+						candidateExits.Add (new Tuple3(i, j, _mazeDimensions.third - 1));
+					}
+				}
+			}
+
+			if (candidateExits.Count > 0) {
+				// Pick a random exit
+				_exitPosition = candidateExits [Random.Range (0, candidateExits.Count - 1)];
+				_exitDirection = BlockFace.Back;
+				return true;
+			}
+
+			// Left Wall
+			for (int i = 0; i < _mazeDimensions.second; ++i) {
+				for (int j = 0; j < _mazeDimensions.third; ++j) {
+					if (_blockMap [0, i, j]) {
+						candidateExits.Add (new Tuple3(0, i, j));
+					}
+				}
+			}
+
+			if (candidateExits.Count > 0) {
+				// Pick a random exit
+				_exitPosition = candidateExits [Random.Range (0, candidateExits.Count - 1)];
+				_exitDirection = BlockFace.Left;
+				return true;
+			}
+
+			// Right Wall
+			for (int i = 0; i < _mazeDimensions.second; ++i) {
+				for (int j = 0; j < _mazeDimensions.third; ++j) {
+					if (_blockMap [_mazeDimensions.first - 1, i, j]) {
+						candidateExits.Add (new Tuple3(_mazeDimensions.first - 1, i, j));
+					}
+				}
+			}
+
+			if (candidateExits.Count > 0) {
+				// Pick a random exit
+				_exitPosition = candidateExits [Random.Range (0, candidateExits.Count - 1)];
+				_exitDirection = BlockFace.Right;
+				return true;
+			}
+
+			// Bottom ??
+
+			return false;
 		}
 
 		// Instantiate Maze Block GameObjects into the world
