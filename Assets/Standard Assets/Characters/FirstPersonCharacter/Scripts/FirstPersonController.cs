@@ -10,7 +10,9 @@ namespace UnityStandardAssets.Characters.FirstPerson
     [RequireComponent(typeof (AudioSource))]
     public class FirstPersonController : MonoBehaviour
     {
-        [SerializeField] private bool m_IsWalking;
+		public bool debugMode;
+
+		[SerializeField] private bool m_IsWalking;
         [SerializeField] private float m_WalkSpeed;
         [SerializeField] private float m_RunSpeed;
         [SerializeField] [Range(0f, 1f)] private float m_RunstepLenghten;
@@ -55,6 +57,11 @@ namespace UnityStandardAssets.Characters.FirstPerson
             m_Jumping = false;
             m_AudioSource = GetComponent<AudioSource>();
 			m_MouseLook.Init(transform , m_Camera.transform);
+
+			if (debugMode) {
+				m_StickToGroundForce = 0;
+				m_GravityMultiplier = 0;
+			}
         }
 
 
@@ -96,18 +103,23 @@ namespace UnityStandardAssets.Characters.FirstPerson
         {
             float speed;
             GetInput(out speed);
-            // always move along the camera forward as it is the direction that it being aimed at
-			//Vector3 desiredMove = transform.forward*m_Input.y + transform.right*m_Input.x;
-			Vector3 desiredMove = m_Camera.transform.forward*m_Input.y + m_Camera.transform.right*m_Input.x;
 
-            // get a normal for the surface that is being touched to move along it
-//            RaycastHit hitInfo;
-//            Physics.SphereCast(transform.position, m_CharacterController.radius, Vector3.down, out hitInfo,
-//                               m_CharacterController.height/2f, ~0, QueryTriggerInteraction.Ignore);
-//            desiredMove = Vector3.ProjectOnPlane(desiredMove, hitInfo.normal).normalized;
+			Vector3 desiredMove;
+			if (debugMode) {
+				desiredMove = m_Camera.transform.forward * m_Input.y + m_Camera.transform.right * m_Input.x;
+				m_MoveDir.y = desiredMove.y*speed;
+			} else {
+				// always move along the camera forward as it is the direction that it being aimed at
+				desiredMove = transform.forward*m_Input.y + transform.right*m_Input.x;
+
+				// get a normal for the surface that is being touched to move along it
+	            RaycastHit hitInfo;
+	            Physics.SphereCast(transform.position, m_CharacterController.radius, Vector3.down, out hitInfo,
+	                               m_CharacterController.height/2f, ~0, QueryTriggerInteraction.Ignore);
+	            desiredMove = Vector3.ProjectOnPlane(desiredMove, hitInfo.normal).normalized;
+			}
 
             m_MoveDir.x = desiredMove.x*speed;
-			m_MoveDir.y = desiredMove.y*speed;
             m_MoveDir.z = desiredMove.z*speed;
 
 
