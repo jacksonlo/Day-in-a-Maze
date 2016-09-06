@@ -38,11 +38,7 @@ public class MazeGenerator : MonoBehaviour {
 		case MazeType.GrowingTree:
 			GrowingTreeMaze maze;
 
-			// Get random starting cell
-//			int x = Random.Range (0, mazeX);
-//			int y = Random.Range (0, mazeY);
-//			int z = Random.Range (0, mazeZ);
-
+			// Get starting cell for algorithm
 			int x = (int)Mathf.Ceil (mazeX / 2);
 			int y = (int)Mathf.Ceil (2 * mazeY / 3);
 			int z = 0;
@@ -66,6 +62,8 @@ public class MazeGenerator : MonoBehaviour {
 			maze.GenerateExitPath (path, 5f);
 
 			// Move Character to entrance
+			Tuple3 exitPath = maze.GetExit();
+			character.transform = new Vector3(exitPath.first, exitPath.second, exitPath.third);
 
 			return maze;
 			break;
@@ -179,17 +177,22 @@ public class MazeGenerator : MonoBehaviour {
 			switch (_exitDirection) {
 			case BlockFace.Left:
 				rotation = Quaternion.Euler (0, 270, 0);
+				for (int i = 0; i < length; ++i) {
+					Instantiate (path, new Vector3 (_exitPosition.first * width - i * width - 6.5f, _exitPosition.second * width - width + 1.25f, _exitPosition.third * width + i * width - 6.5f), rotation);
+				}
 				break;
 			case BlockFace.Right:
 				rotation = Quaternion.Euler (0, 90, 0);
+				for (int i = 0; i < length; ++i) {
+					Instantiate (path, new Vector3 (_exitPosition.first * width + i * width - 6.5f, _exitPosition.second * width - width + 1.25f, _exitPosition.third * width), rotation);
+				}
 				break;
 			case BlockFace.Back:
 				rotation = Quaternion.identity;
+				for (int i = 0; i < length; ++i) {
+					Instantiate (path, new Vector3 (_exitPosition.first * width, _exitPosition.second * width - width + 1.25f, _exitPosition.third * width + i * width - 6.5f), rotation);
+				}
 				break;
-			}
-
-			for (int i = 0; i < length; ++i) {
-				Instantiate (path, new Vector3 (_exitPosition.first * width, _exitPosition.second * width - width + 1.25f, _exitPosition.third * width + i * width - 6.5f), rotation);
 			}
 		}
 
