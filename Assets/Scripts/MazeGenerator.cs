@@ -21,10 +21,6 @@ public class MazeGenerator : MonoBehaviour {
 		// Generate maze
 		mazeList = new List<Maze> ();
 		mazeList.Add(GenerateMaze (MazeType.GrowingTree));
-
-		// Build a path to entrance
-
-		//
 	}
 
 	// Update is called once per frame
@@ -63,7 +59,7 @@ public class MazeGenerator : MonoBehaviour {
 
 			// Move Character to entrance
 			Tuple3 exitPath = maze.GetExit();
-			character.transform = new Vector3(exitPath.first, exitPath.second, exitPath.third);
+			character.transform.position = new Vector3(exitPath.first, exitPath.second, exitPath.third);
 
 			return maze;
 			break;
