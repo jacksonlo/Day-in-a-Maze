@@ -7,6 +7,8 @@ public class MazeGenerator : MonoBehaviour {
 	public Camera character;
 	public GameObject[] blockTypes;
 	public GameObject path;
+	public GameObject empty;
+
 	public int mazeX;
 	public int mazeY;
 	public int mazeZ;
@@ -15,6 +17,7 @@ public class MazeGenerator : MonoBehaviour {
 	private enum MazeType {GrowingTree};
 
 	private List<Maze> mazeList;
+	private List<GameObject> mazeContainers;
 
 	// Use this for initialization
 	void Start () {
@@ -50,16 +53,21 @@ public class MazeGenerator : MonoBehaviour {
 				Debug.Log ("Failed to choose an exit");
 			}
 
+			// Set Parent
+			GameObject parent = Instantiate(empty, new Vector3(0, 0, 0), Quaternion.identity) as GameObject;
+			mazeContainers.Add(parent);
+			maze.SetParent(mazeContainers[mazeContainers.Count - 1]);
+
 			// Instantiate Blocks in maze
 			maze.InstantiateMaze ();
 
 			// Generate platforms to entrance and exit
-			maze.GenerateEntrancePath (path, 10f);
-			maze.GenerateExitPath (path, 5f);
-
-			// Move Character to entrance
-			Tuple3 exitPath = maze.GetExit();
-			character.transform.position = new Vector3(exitPath.first, exitPath.second, exitPath.third);
+//			maze.GenerateEntrancePath (path, 10f);
+//			maze.GenerateExitPath (path, 5f);
+//
+//			// Move Character to entrance
+//			Tuple3 exitPath = maze.GetExit();
+//			character.transform.position = new Vector3(exitPath.first, exitPath.second, exitPath.third);
 
 			return maze;
 			break;
@@ -144,6 +152,7 @@ public class MazeGenerator : MonoBehaviour {
 		protected Block[, ,] _blockMaze;		// 3D array of actual blocks of the maze
 		protected bool[, ,] _blockMap;		// 3D array of which block locations, false = block, true = empty space
 		protected GameObject[] _blockTypes;
+		protected GameObject _parent;
 
 		protected enum BlockFace {Left, Right, Back, Front, Bottom, Top};
 
@@ -156,6 +165,11 @@ public class MazeGenerator : MonoBehaviour {
 
 			_blockMaze = new Block[_mazeDimensions.first, _mazeDimensions.second, _mazeDimensions.third];
 			_blockMap = new bool[_mazeDimensions.first, _mazeDimensions.second, _mazeDimensions.third];
+		}
+
+		// Sets parent game object for use later
+		public void SetParent(GameObject parent) {
+			_parent = parent;
 		}
 
 		// Generates platform to entrance
@@ -265,7 +279,7 @@ public class MazeGenerator : MonoBehaviour {
 				for (int j = 0; j < _mazeDimensions.second; ++j) {
 					for (int k = 0; k < _mazeDimensions.third; ++k) {
 						if(!_blockMap[i, j, k]) {
-							_blockMaze [i, j, k] = new Block (_blockTypes[(int)BlockType.Metal], i, j, k);
+							_blockMaze [i, j, k] = new Block (_blockTypes[(int)BlockType.Metal], _parent, i, j, k);
 						}
 					}
 				}
@@ -490,6 +504,17 @@ public class MazeGenerator : MonoBehaviour {
 			_width = _blockType.transform.lossyScale.x;
 
 			_blockType = Instantiate (_blockType, new Vector3(x * _width, y * _width, z * _width), Quaternion.identity) as GameObject;
+		}
+
+		public Block(GameObject blockType, GameObject parent, int x, int y, int z) {
+			this.x = x;
+			this.y = y;
+			this.z = z;
+			_blockType = blockType;
+			_width = _blockType.transform.lossyScale.x;
+
+			_blockType = Instantiate (_blockType, new Vector3(x * _width, y * _width, z * _width), Quaternion.identity) as GameObject;
+			_blockType.transform.parent = parent.transform;
 		}
 
 	}
