@@ -17,18 +17,31 @@ public class MazeGenerator : MonoBehaviour {
 	private enum MazeType {GrowingTree};
 
 	private List<Maze> mazeList;
-	private List<GameObject> mazeContainers;
 
 	// Use this for initialization
 	void Start () {
 		// Generate maze
 		mazeList = new List<Maze> ();
 		mazeList.Add(GenerateMaze (MazeType.GrowingTree));
+
+		foreach (Maze m in mazeList) {
+			// Should I thread this?
+			m.Rotate(Vector3.up);
+		}
 	}
 
 	// Update is called once per frame
 	void Update () {
-
+		// Check for rotations
+		foreach (Maze m in mazeList) {
+			// Should I thread this?
+			if (m.rotating) {
+				m.parent.transform.Rotate (m.rotator, Time.deltaTime);
+				if (m.parent.transform.rotation.eulerAngles.x >= 90) {
+					m.rotating = false;
+				}
+			}
+		}
 	}
 
 	// Method to Generate Maze
@@ -54,9 +67,7 @@ public class MazeGenerator : MonoBehaviour {
 			}
 
 			// Set Parent
-			GameObject parent = Instantiate(empty, new Vector3(0, 0, 0), Quaternion.identity) as GameObject;
-			mazeContainers.Add(parent);
-			maze.SetParent(mazeContainers[mazeContainers.Count - 1]);
+			maze.parent = Instantiate(empty, new Vector3(0, 0, 0), Quaternion.identity) as GameObject;
 
 			// Instantiate Blocks in maze
 			maze.InstantiateMaze ();
@@ -74,6 +85,15 @@ public class MazeGenerator : MonoBehaviour {
 		}
 		return null;
 	}
+
+	// Shuffle Maze, mazeType parameter for type of shuffling algorithm
+//	private Maze ShuffleMaze(Maze maze, MazeType mazeType) {
+//		// Generate a maze positioning with the mazeType
+//
+//		// On another thread, A* calculate the moves to sliding puzzle into the maze
+//
+//		// On another thread execute those moves in sequence
+//	}
 
 	#region Growing Tree Maze
 	public class GrowingTreeMaze : Maze {
@@ -145,19 +165,22 @@ public class MazeGenerator : MonoBehaviour {
 
 	#region Maze Class Definition
 	public class Maze {
+		public bool rotating { get; set; }		// Rotation status
+		public Vector3 rotator { get; set; }	// Direction of rotation Vector3.right, Vector3.up etc..
+		public GameObject parent { get; set; }	// Empty Parent object containing all the maze block gameobjects
+
 		protected Tuple3 _mazeDimensions;		// Maze Dimensions
 		protected Tuple3 _startingPosition; 	// Coordinates for startingPosition/entrance
-		protected Tuple3 _exitPosition;
-		protected BlockFace _exitDirection;
+		protected Tuple3 _exitPosition;			// Coordinates for exitPosition
+		protected BlockFace _exitDirection;		// The side of the cube that the exit protrudes from
 		protected Block[, ,] _blockMaze;		// 3D array of actual blocks of the maze
-		protected bool[, ,] _blockMap;		// 3D array of which block locations, false = block, true = empty space
-		protected GameObject[] _blockTypes;
-		protected GameObject _parent;
-
+		protected bool[, ,] _blockMap;			// 3D array of which block locations, false = block, true = empty space
+		protected GameObject[] _blockTypes;		// The blocktypes
 		protected enum BlockFace {Left, Right, Back, Front, Bottom, Top};
 
 		// Constructor
 		public Maze(GameObject[] blockTypes, Tuple3 dimensions, Tuple3 startingPosition) {
+			rotating = false;
 			_mazeDimensions = dimensions;
 			_startingPosition = startingPosition;
 			_exitPosition = null;
@@ -167,9 +190,10 @@ public class MazeGenerator : MonoBehaviour {
 			_blockMap = new bool[_mazeDimensions.first, _mazeDimensions.second, _mazeDimensions.third];
 		}
 
-		// Sets parent game object for use later
-		public void SetParent(GameObject parent) {
-			_parent = parent;
+		// Sets the rotate variables for the maze via the parent object
+		public void Rotate(Vector3 rotator) {
+			this.rotating = true;	
+			this.rotator = rotator;
 		}
 
 		// Generates platform to entrance
@@ -279,7 +303,7 @@ public class MazeGenerator : MonoBehaviour {
 				for (int j = 0; j < _mazeDimensions.second; ++j) {
 					for (int k = 0; k < _mazeDimensions.third; ++k) {
 						if(!_blockMap[i, j, k]) {
-							_blockMaze [i, j, k] = new Block (_blockTypes[(int)BlockType.Metal], _parent, i, j, k);
+							_blockMaze [i, j, k] = new Block (_blockTypes[(int)BlockType.Metal], parent, i, j, k);
 						}
 					}
 				}
