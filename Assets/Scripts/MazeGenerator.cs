@@ -15,10 +15,10 @@ public class MazeGenerator : MonoBehaviour {
 
 	private enum BlockType {Metal = 0, White = 1};
 	private enum MazeType {GrowingTree};
+	private enum Direction {Up, Down, Left, Right, Clockwise, CounterClockwise};
 
 	private List<Maze> _mazeList;
 	private float _rotationTime;
-	private Quaternion initialQ, targetQ;
 
 	// Use this for initialization
 	void Start () {
@@ -26,72 +26,34 @@ public class MazeGenerator : MonoBehaviour {
 		_mazeList = new List<Maze> ();
 		_mazeList.Add(GenerateMaze (MazeType.GrowingTree));
 
-		_rotationTime = 0f;
-		foreach (Maze m in _mazeList) {
-			// Should I thread this?
-			_rotationTime += Time.deltaTime;
-			initialQ = m.parent.transform.rotation;
-			targetQ = Quaternion.Euler(initialQ.eulerAngles.x, initialQ.eulerAngles.y+90, initialQ.eulerAngles.z);
-
-			//m.Rotate(Vector3.up);
-		}
+//		foreach (Maze m in _mazeList) {
+//			m.Rotate (Direction.Up, 3f);
+//		}
 	}
 
 	// Update is called once per frame
 	void Update () {
-		
 
-		// Check for rotations
+		// Check for rotations and apply them
 		foreach (Maze m in _mazeList) {
-			_rotationTime += Time.deltaTime;
-			m.parent.transform.rotation = Quaternion.Lerp(initialQ, targetQ,  _rotationTime);
-			// Should I thread this?
-//			if (m.rotating) {
-//				m.parent.transform.Rotate (m.rotator, Time.deltaTime * 10);
-//
-//				float currentAngle = 0f;
-//				float goal = 0f;
-//				bool check = false;
-//
-//				if (m.rotator == Vector3.up) {
-//					currentAngle = m.parent.transform.rotation.eulerAngles.y;
-//					goal = NormalizeAngle(m.rotation + 90);
-//					check = currentAngle >= goal;
-//				} else if (m.rotator == Vector3.down) {
-//					currentAngle = m.parent.transform.rotation.eulerAngles.y;
-//					goal = NormalizeAngle(m.rotation - 90);
-//					check = currentAngle <= goal;
-//				} else if (m.rotator == Vector3.left) {
-//					currentAngle = m.parent.transform.rotation.eulerAngles.x;
-//					goal = NormalizeAngle(m.rotation - 90);
-//					check = currentAngle <= goal;
-//				} else if (m.rotator == Vector3.right) {
-//					currentAngle = m.parent.transform.rotation.eulerAngles.x;
-//					goal = NormalizeAngle(m.rotation + 90);
-//					check = currentAngle >= goal;
-//				} else if (m.rotator == Vector3.forward) {
-//					currentAngle = m.parent.transform.rotation.eulerAngles.z;
-//					goal = NormalizeAngle (m.rotation + 90);
-//					check = currentAngle >= goal;
-//				} else if (m.rotator == Vector3.back) {
-//					currentAngle = m.parent.transform.rotation.eulerAngles.z;
-//					goal = NormalizeAngle (m.rotation - 90);
-//					check = currentAngle <= goal;
-//				}
-//					
-//				if (check) {
-//					m.rotating = false;
-//				}
-//			}
+			if (m.rotating) {
+				m.ApplyRotation ();
+			} else {
+				if (Input.GetKeyDown (KeyCode.UpArrow)) {
+					m.Rotate (Direction.Up);
+				} else if (Input.GetKeyDown (KeyCode.DownArrow)) {
+					m.Rotate (Direction.Down);
+				} else if (Input.GetKeyDown (KeyCode.LeftArrow)) {
+					m.Rotate (Direction.Left);
+				} else if (Input.GetKeyDown (KeyCode.RightArrow)) {
+					m.Rotate (Direction.Right);
+				} else if (Input.GetKeyDown (KeyCode.Less)) {
+					m.Rotate (Direction.Clockwise);
+				} else if (Input.GetKeyDown (KeyCode.Greater)) {
+					m.Rotate (Direction.CounterClockwise);
+				}
+			}
 		}
-	}
-
-	// Helper to Normalize angles to within 0 to 360
-	private float NormalizeAngle(float angle) {
-		float newAngle = angle;
-		while (newAngle < 0) newAngle += 360;
-		while (newAngle > 360) newAngle -= 360;
-		return newAngle;
 	}
 
 	// Method to Generate Maze
@@ -146,7 +108,7 @@ public class MazeGenerator : MonoBehaviour {
 //	}
 
 	#region Growing Tree Maze
-	public class GrowingTreeMaze : Maze {
+	private class GrowingTreeMaze : Maze {
 		// Constructor
 		public GrowingTreeMaze(GameObject[] blockTypes, Tuple3 dimensions, Tuple3 bottomFarLeft) 
 			: base(blockTypes, dimensions, bottomFarLeft) {}
@@ -214,11 +176,14 @@ public class MazeGenerator : MonoBehaviour {
 	#endregion
 
 	#region Maze Class Definition
-	public class Maze {
-		public bool rotating { get; set; }		// Rotation status
-		public Vector3 rotator { get; set; }	// Direction of rotation Vector3.right, Vector3.up etc..
-		public float rotation { get; set; }	// Goal rotation
-		public GameObject parent { get; set; }	// Empty Parent object containing all the maze block gameobjects
+	private class Maze {
+		public bool rotating { get; set; }				// Rotation status
+		public float rotationTime { get; set; }			// Time spent rotating
+		public float rotationSeconds { get; set; }		// Speed of rotation
+		public Vector3 rotationDirection { get; set; }	// Direction of rotation
+		public Quaternion initialQ { get; set; }		// Initial Rotation Quaternion
+		public Quaternion targetQ { get; set; }			// Target Rotation Quaternion
+		public GameObject parent { get; set; }			// Empty Parent object containing all the maze block gameobjects
 
 		protected Tuple3 _mazeDimensions;		// Maze Dimensions
 		protected Tuple3 _startingPosition; 	// Coordinates for startingPosition/entrance
@@ -242,17 +207,54 @@ public class MazeGenerator : MonoBehaviour {
 		}
 
 		// Sets the rotate variables for the maze via the parent object
-		public void Rotate(Vector3 rotator) {
-			this.rotating = true;	
-			this.rotator = rotator;
+		public void Rotate(Direction d, float seconds = 1f) {
+			rotating = true;	
+			rotationTime = 0;
+			rotationSeconds = seconds;
+			initialQ = parent.transform.rotation;
 
-			float currentAngle = 0f;
-			if(rotator == Vector3.up) currentAngle = parent.transform.rotation.eulerAngles.x;
-			else if(rotator == Vector3.down) currentAngle = parent.transform.rotation.eulerAngles.x;
-			else if(rotator == Vector3.left) currentAngle = parent.transform.rotation.eulerAngles.y;
-			else if(rotator == Vector3.right) currentAngle = parent.transform.rotation.eulerAngles.y;
-			else if(rotator == Vector3.forward) currentAngle = parent.transform.rotation.eulerAngles.z;
-			else if(rotator == Vector3.back) currentAngle = parent.transform.rotation.eulerAngles.z;
+			// Map intuitive directions to the appropriate axis rotations
+			switch (d) {
+			case Direction.Up:
+				rotationDirection = Vector3.right;
+				break;
+			case Direction.Down:
+				rotationDirection = Vector3.left;
+				break;
+			case Direction.Left:
+				rotationDirection = Vector3.down;
+				break;
+			case Direction.Right:
+				rotationDirection = Vector3.up;
+				break;
+			case Direction.Clockwise:
+				rotationDirection = Vector3.forward;
+				break;
+			case Direction.CounterClockwise:
+				rotationDirection = Vector3.back;
+				break;
+			}
+
+			Vector3 correctedAxis = Quaternion.Inverse(initialQ) * rotationDirection;
+			Quaternion axisRotation = Quaternion.AngleAxis(90, correctedAxis);
+			targetQ = initialQ * axisRotation;
+		}
+
+		// Applies the rotation to the maze
+		public bool ApplyRotation() {
+			if (rotating) {
+				rotationTime += Time.deltaTime / rotationSeconds;
+
+				parent.transform.rotation = Quaternion.Lerp (initialQ, targetQ, rotationTime);
+
+				// Check if rotation is done
+				if (parent.transform.rotation == targetQ) {
+					rotating = false;
+				}
+				return true;
+			} else {
+				return false;
+			}
 		}
 
 		// Generates platform to entrance
