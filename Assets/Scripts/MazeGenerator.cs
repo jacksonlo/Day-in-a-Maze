@@ -25,10 +25,6 @@ public class MazeGenerator : MonoBehaviour {
 		// Generate maze
 		_mazeList = new List<Maze> ();
 		_mazeList.Add(GenerateMaze (MazeType.GrowingTree));
-
-//		foreach (Maze m in _mazeList) {
-//			m.Rotate (Direction.Up, 3f);
-//		}
 	}
 
 	// Update is called once per frame
@@ -47,9 +43,9 @@ public class MazeGenerator : MonoBehaviour {
 					m.Rotate (Direction.Left);
 				} else if (Input.GetKeyDown (KeyCode.RightArrow)) {
 					m.Rotate (Direction.Right);
-				} else if (Input.GetKeyDown (KeyCode.Less)) {
+				} else if (Input.GetKeyDown (KeyCode.Comma)) {
 					m.Rotate (Direction.Clockwise);
-				} else if (Input.GetKeyDown (KeyCode.Greater)) {
+				} else if (Input.GetKeyDown (KeyCode.Period)) {
 					m.Rotate (Direction.CounterClockwise);
 				}
 			}
