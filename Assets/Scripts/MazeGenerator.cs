@@ -105,7 +105,7 @@ public class MazeGenerator : MonoBehaviour {
 //	}
 
 
-	#region MazeGeneration Class Definition
+	#region Maze Algorithm Class Definition
 	private class MazeAlgorithm {
 		public static void GrowingTree(Maze m) { 
 			List<Tuple3> blockList = new List<Tuple3>();
