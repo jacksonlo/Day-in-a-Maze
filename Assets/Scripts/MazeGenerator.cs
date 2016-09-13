@@ -55,17 +55,16 @@ public class MazeGenerator : MonoBehaviour {
 
 	// Method to Generate Maze
 	private Maze GenerateMaze(MazeAlgorithmMode mazeGenType) {
+		Maze maze = null;
 		switch(mazeGenType) {
 		case MazeAlgorithmMode.GrowingTree:
-			Maze maze;
-
 			// Get starting cell for algorithm
 			int x = (int)Mathf.Ceil (mazeX / 2);
 			int y = (int)Mathf.Ceil (2 * mazeY / 3);
 			int z = 0;
 
 			// Growing Tree algorithm
-			maze = new Maze (blockTypes, new Tuple3 (mazeX, mazeY, mazeZ), new Tuple3 (x, y, z), MazeAlgorithmMode.GrowingTree);
+			maze = new Maze (empty, blockTypes, new Tuple3<int> (mazeX, mazeY, mazeZ), new Tuple3<int> (x, y, z), MazeAlgorithmMode.GrowingTree);
 
 			// Calculate Maze
 			maze.CalculateMaze ();
@@ -75,9 +74,6 @@ public class MazeGenerator : MonoBehaviour {
 				Debug.Log ("Failed to choose an exit");
 			}
 
-			// Set Parent
-			maze.parent = Instantiate(empty, new Vector3(0, 0, 0), Quaternion.identity) as GameObject;
-
 			// Instantiate Blocks in maze
 			maze.InstantiateMaze ();
 
@@ -86,13 +82,12 @@ public class MazeGenerator : MonoBehaviour {
 //			maze.GenerateExitPath (path, 5f);
 //
 //			// Move Character to entrance
-//			Tuple3 exitPath = maze.GetExit();
+//			Tuple3<int> exitPath = maze.GetExit();
 //			character.transform.position = new Vector3(exitPath.first, exitPath.second, exitPath.third);
 
-			return maze;
 			break;
 		}
-		return null;
+		return maze;
 	}
 
 	// Shuffle Maze, mazeType parameter for type of shuffling algorithm
@@ -108,10 +103,10 @@ public class MazeGenerator : MonoBehaviour {
 	#region Maze Algorithm Class Definition
 	private class MazeAlgorithm {
 		public static void GrowingTree(Maze m) { 
-			List<Tuple3> blockList = new List<Tuple3>();
-			blockList.Add (new Tuple3 (m.startingPosition.first, m.startingPosition.second, m.startingPosition.third));
+			List<Tuple3<int> > blockList = new List<Tuple3<int> >();
+			blockList.Add (new Tuple3<int> (m.startingPosition.first, m.startingPosition.second, m.startingPosition.third));
 
-			Tuple3 currentCell;
+			Tuple3<int> currentCell;
 			int x, y, z;
 
 			while (blockList.Count > 0) {
@@ -124,7 +119,7 @@ public class MazeGenerator : MonoBehaviour {
 				m.Carve(x, y, z);
 
 				// Get Unvisited Valid Neighbours
-				List<Tuple3> neighbours = m.GetPotentialNeighbours(currentCell);
+				List<Tuple3<int> > neighbours = m.GetPotentialNeighbours(currentCell);
 
 				// If no neighbours, remove cell
 				if (neighbours.Count == 0) {
@@ -139,7 +134,7 @@ public class MazeGenerator : MonoBehaviour {
 				}
 
 				// Pick a (random) neighbour
-				Tuple3 newCell = neighbours[Random.Range(0, neighbours.Count)];
+				Tuple3<int> newCell = neighbours[Random.Range(0, neighbours.Count)];
 
 				// Carve to it
 				m.CarveTo(currentCell, newCell);
@@ -163,10 +158,10 @@ public class MazeGenerator : MonoBehaviour {
 		public Quaternion initialQ { get; set; }		// Initial Rotation Quaternion
 		public Quaternion targetQ { get; set; }			// Target Rotation Quaternion
 		public GameObject parent { get; set; }			// Empty Parent object containing all the maze block gameobjects
-		public Tuple3 startingPosition { get; set; } 	// Coordinates for startingPosition/entrance
-		public Tuple3 exitPosition { get; set; }		// Coordinates for exitPosition
+		public Tuple3<int> startingPosition { get; set; } 	// Coordinates for startingPosition/entrance
+		public Tuple3<int> exitPosition { get; set; }		// Coordinates for exitPosition
 
-		protected Tuple3 _mazeDimensions;		// Maze Dimensions
+		protected Tuple3<int> _mazeDimensions;		// Maze Dimensions
 		protected BlockFace _exitDirection;		// The side of the cube that the exit protrudes from
 		protected Block[, ,] _blockMaze;		// 3D array of actual blocks of the maze
 		protected bool[, ,] _blockMap;			// 3D array of which block locations, false = block, true = empty space
@@ -175,7 +170,8 @@ public class MazeGenerator : MonoBehaviour {
 		private AlgorithmDelegate mazeAlgorithm;		// Maze Algorithm set
 
 		// Constructor
-		public Maze(GameObject[] blockTypes, Tuple3 dimensions, Tuple3 startingPosition, MazeAlgorithmMode mazeAlgo = MazeAlgorithmMode.GrowingTree) {
+		public Maze(GameObject mazeParent, GameObject[] blockTypes, Tuple3<int> dimensions, Tuple3<int> startingPosition, MazeAlgorithmMode mazeAlgo = MazeAlgorithmMode.GrowingTree) {
+			parent = mazeParent;
 			rotating = false;
 			_mazeDimensions = dimensions;
 			this.startingPosition = startingPosition;
@@ -187,7 +183,7 @@ public class MazeGenerator : MonoBehaviour {
 
 			SetAlgorithm(mazeAlgo);
 		}
-
+			
 		// Sets the maze generation algorithm for use during calculatemaze
 		public void SetAlgorithm(MazeAlgorithmMode mazeAlgo) {
 			switch (mazeAlgo) {
@@ -283,24 +279,24 @@ public class MazeGenerator : MonoBehaviour {
 		}
 
 		// Returns entrance coordinates
-		public Tuple3 GetEntrance() {
+		public Tuple3<int> GetEntrance() {
 			return startingPosition;
 		}
 
 		// Returns exit coordinates, must be called after ChooseExit
-		public Tuple3 GetExit() {
+		public Tuple3<int> GetExit() {
 			return exitPosition;
 		}
 
 		// Chooses an exit
 		public virtual bool ChooseExit() {
-			List<Tuple3> candidateExits = new List<Tuple3> ();
+			List<Tuple3<int> > candidateExits = new List<Tuple3<int> > ();
 
 			// Opposite Wall
 			for (int i = 0; i < _mazeDimensions.first; ++i) {
 				for (int j = 0; j < _mazeDimensions.second; ++j) {
 					if (_blockMap [i, j, _mazeDimensions.third - 1]) {
-						candidateExits.Add (new Tuple3(i, j, _mazeDimensions.third - 1));
+						candidateExits.Add (new Tuple3<int> (i, j, _mazeDimensions.third - 1));
 					}
 				}
 			}
@@ -316,7 +312,7 @@ public class MazeGenerator : MonoBehaviour {
 			for (int i = 0; i < _mazeDimensions.second; ++i) {
 				for (int j = 0; j < _mazeDimensions.third; ++j) {
 					if (_blockMap [0, i, j]) {
-						candidateExits.Add (new Tuple3(0, i, j));
+						candidateExits.Add (new Tuple3<int>(0, i, j));
 					}
 				}
 			}
@@ -332,7 +328,7 @@ public class MazeGenerator : MonoBehaviour {
 			for (int i = 0; i < _mazeDimensions.second; ++i) {
 				for (int j = 0; j < _mazeDimensions.third; ++j) {
 					if (_blockMap [_mazeDimensions.first - 1, i, j]) {
-						candidateExits.Add (new Tuple3(_mazeDimensions.first - 1, i, j));
+						candidateExits.Add (new Tuple3<int>(_mazeDimensions.first - 1, i, j));
 					}
 				}
 			}
@@ -351,6 +347,13 @@ public class MazeGenerator : MonoBehaviour {
 
 		// Instantiate Maze Block GameObjects into the world
 		public void InstantiateMaze() {
+			// Instantiate Parent
+			Tuple3<float> pivotCenter = new Tuple3<float> (_blockTypes [(int)BlockType.Metal].transform.lossyScale.x * _mazeDimensions.first / 2,
+				_blockTypes [(int)BlockType.Metal].transform.lossyScale.y * _mazeDimensions.second / 2,
+				_blockTypes [(int)BlockType.Metal].transform.lossyScale.z * _mazeDimensions.third / 2);
+			parent = Instantiate(parent, new Vector3(pivotCenter.first, pivotCenter.second, pivotCenter.third), Quaternion.identity) as GameObject;
+
+
 			for (int i = 0; i < _mazeDimensions.first; ++i) {
 				for (int j = 0; j < _mazeDimensions.second; ++j) {
 					for (int k = 0; k < _mazeDimensions.third; ++k) {
@@ -375,12 +378,12 @@ public class MazeGenerator : MonoBehaviour {
 			}
 			return false;
 		}
-		public bool Carve(Tuple3 location) {
+		public bool Carve(Tuple3<int> location) {
 			return Carve (location.first, location.second, location.third);
 		}
 
 		// Carve to a location (Since 1 block thickness between each carveable block)
-		public bool CarveTo(Tuple3 from, Tuple3 to) {
+		public bool CarveTo(Tuple3<int> from, Tuple3<int> to) {
 			int xdiff = to.first - from.first;
 			int ydiff = to.second - from.second;
 			int zdiff = to.third - from.third;
@@ -416,7 +419,7 @@ public class MazeGenerator : MonoBehaviour {
 			_blockMaze [x, y, z] = new Block (_blockTypes[blockType], x, y, z);
 			return true;
 		}
-		public bool CreateBlock(int blockType, Tuple3 location) {
+		public bool CreateBlock(int blockType, Tuple3<int> location) {
 			return CreateBlock (blockType, location.first, location.second, location.third);
 		}
 
@@ -429,84 +432,84 @@ public class MazeGenerator : MonoBehaviour {
 			_blockMaze [x, y, z] = b;
 			return true;
 		}
-		public bool PlaceBlock(Block b, Tuple3 location) {
+		public bool PlaceBlock(Block b, Tuple3<int> location) {
 			return PlaceBlock (b, location.first, location.second, location.third);
 		}
 
 		// Get all neighbours that are spaces
-		public List<Tuple3> GetSpaceNeighbours(Tuple3 location) {
+		public List<Tuple3<int> > GetSpaceNeighbours(Tuple3<int> location) {
 			int x = location.first;
 			int y = location.second;
 			int z = location.third;
 
-			List<Tuple3> neighbours = new List<Tuple3> ();
+			List<Tuple3<int> > neighbours = new List<Tuple3<int> > ();
 
 			// Top
 			if (y + 2 < _mazeDimensions.second && _blockMap [x, y + 2, z]) {
-				neighbours.Add (new Tuple3(x, y + 2, z));
+				neighbours.Add (new Tuple3<int>(x, y + 2, z));
 			}
 
 			// Front
 			if (z + 2 < _mazeDimensions.third && _blockMap [x, y, z + 2]) {
-				neighbours.Add (new Tuple3(x, y, z + 2));
+				neighbours.Add (new Tuple3<int>(x, y, z + 2));
 			}
 
 			// Bottom
 			if (y - 2 >= 0 && _blockMap [x, y - 2, z]) {
-				neighbours.Add (new Tuple3(x, y - 2, z));
+				neighbours.Add (new Tuple3<int>(x, y - 2, z));
 			}
 
 			// Left
 			if (x - 2 >= 0 && _blockMap [x - 2, y, z]) {
-				neighbours.Add (new Tuple3(x - 2, y, z));
+				neighbours.Add (new Tuple3<int>(x - 2, y, z));
 			}
 
 			// Right
 			if (x + 2 < _mazeDimensions.first && _blockMap [x + 2, y, z]) {
-				neighbours.Add (new Tuple3(x + 2, y, z));
+				neighbours.Add (new Tuple3<int>(x + 2, y, z));
 			}
 
 			// Back
 			if (z - 2 >= 0 && _blockMap [x, y, z - 2]) {
-				neighbours.Add (new Tuple3(x, y, z - 2));
+				neighbours.Add (new Tuple3<int>(x, y, z - 2));
 			}
 
 			return neighbours;
 		}
 
 		// Returns true if the location has neighbours that are spaces
-		public bool HasSpaceNeighbours(Tuple3 from, Tuple3 location) {
+		public bool HasSpaceNeighbours(Tuple3<int> from, Tuple3<int> location) {
 			int x = location.first;
 			int y = location.second;
 			int z = location.third;
 
 			// Top
-			if (y + 2 < _mazeDimensions.second && _blockMap [x, y + 2, z] && !from.Equals(new Tuple3(x, y + 2, z))) {
+			if (y + 2 < _mazeDimensions.second && _blockMap [x, y + 2, z] && !from.Equals(new Tuple3<int>(x, y + 2, z))) {
 				return true;
 			}
 
 			// Front
-			if (z + 2 < _mazeDimensions.third && _blockMap [x, y, z + 2] && !from.Equals(new Tuple3(x, y, z + 2)))  {
+			if (z + 2 < _mazeDimensions.third && _blockMap [x, y, z + 2] && !from.Equals(new Tuple3<int>(x, y, z + 2)))  {
 				return true;
 			}
 
 			// Bottom
-			if (y - 2 >= 0 && _blockMap [x, y - 2, z] && !from.Equals(new Tuple3(x, y - 2, z)))  {
+			if (y - 2 >= 0 && _blockMap [x, y - 2, z] && !from.Equals(new Tuple3<int>(x, y - 2, z)))  {
 				return true;
 			}
 
 			// Left
-			if (x - 2 >= 0 && _blockMap [x - 2, y, z] && !from.Equals(new Tuple3(x - 2, y, z)))  {
+			if (x - 2 >= 0 && _blockMap [x - 2, y, z] && !from.Equals(new Tuple3<int>(x - 2, y, z)))  {
 				return true;
 			}
 
 			// Right
-			if (x + 2 < _mazeDimensions.first && _blockMap [x + 2, y, z] && !from.Equals(new Tuple3(x + 2, y, z)))  {
+			if (x + 2 < _mazeDimensions.first && _blockMap [x + 2, y, z] && !from.Equals(new Tuple3<int>(x + 2, y, z)))  {
 				return true;
 			}
 
 			// Back
-			if (z - 2 >= 0 && _blockMap [x, y, z - 2] && !from.Equals(new Tuple3(x, y, z - 2)))  {
+			if (z - 2 >= 0 && _blockMap [x, y, z - 2] && !from.Equals(new Tuple3<int>(x, y, z - 2)))  {
 				return true;
 			}
 
@@ -514,53 +517,53 @@ public class MazeGenerator : MonoBehaviour {
 		}
 
 		// Get's all neighbours that are blocks
-		public List<Tuple3> GetBlockNeighbours(Tuple3 location) {
+		public List<Tuple3<int> > GetBlockNeighbours(Tuple3<int> location) {
 			int x = location.first;
 			int y = location.second;
 			int z = location.third;
 
-			List<Tuple3> neighbours = new List<Tuple3> ();
+			List<Tuple3<int> > neighbours = new List<Tuple3<int> > ();
 
 			// Top
 			if (y + 2 < _mazeDimensions.second && !_blockMap [x, y + 2, z]) {
-				neighbours.Add (new Tuple3(x, y + 2, z));
+				neighbours.Add (new Tuple3<int>(x, y + 2, z));
 			}
 
 			// Front
 			if (z + 2 < _mazeDimensions.third && !_blockMap [x, y, z + 2]) {
-				neighbours.Add (new Tuple3(x, y, z + 2));
+				neighbours.Add (new Tuple3<int>(x, y, z + 2));
 			}
 
 			// Bottom
 			if (y - 2 >= 0 && !_blockMap [x, y - 2, z]) {
-				neighbours.Add (new Tuple3(x, y - 2, z));
+				neighbours.Add (new Tuple3<int>(x, y - 2, z));
 			}
 
 			// Left
 			if (x - 2 >= 0 && !_blockMap [x - 2, y, z]) {
-				neighbours.Add (new Tuple3(x - 2, y, z));
+				neighbours.Add (new Tuple3<int>(x - 2, y, z));
 			}
 
 			// Right
 			if (x + 2 < _mazeDimensions.first && !_blockMap [x + 2, y, z]) {
-				neighbours.Add (new Tuple3(x + 2, y, z));
+				neighbours.Add (new Tuple3<int>(x + 2, y, z));
 			}
 
 			// Back
 			if (z - 2 >= 0 && !_blockMap [x, y, z - 2]) {
-				neighbours.Add (new Tuple3(x, y, z - 2));
+				neighbours.Add (new Tuple3<int>(x, y, z - 2));
 			}
 
 			return neighbours;
 		}
 
 		// Get all potential neighbours to carve to, ie. it has no neighbouring cells that are already carved
-		public List<Tuple3> GetPotentialNeighbours(Tuple3 from) {
-			List<Tuple3> neighbours = GetBlockNeighbours (from);
+		public List<Tuple3<int> > GetPotentialNeighbours(Tuple3<int> from) {
+			List<Tuple3<int> > neighbours = GetBlockNeighbours (from);
 
 			// Check if neighbours are valid, ie. it has no neighbouring cells that are already carved
 			for (int i = 0; i < neighbours.Count; ++i) {
-				Tuple3 n = neighbours [i];
+				Tuple3<int> n = neighbours [i];
 				if (HasSpaceNeighbours (from, n)) {
 					neighbours.RemoveAt (i--);
 				}
@@ -606,12 +609,12 @@ public class MazeGenerator : MonoBehaviour {
 	#endregion
 
 	#region Tuple3 Definition
-	public class Tuple3 {
-		public int first { get; set; }
-		public int second { get; set; }
-		public int third { get; set; }
+	public class Tuple3<T> {
+		public T first { get; set; }
+		public T second { get; set; }
+		public T third { get; set; }
 
-		public Tuple3(int a, int b, int c) {
+		public Tuple3(T a, T b, T c) {
 			first = a;
 			second = b;
 			third = c;
@@ -622,8 +625,8 @@ public class MazeGenerator : MonoBehaviour {
 			if (obj == null || GetType() != obj.GetType()) 
 				return false;
 
-			Tuple3 t = (Tuple3)obj;
-			return (first == t.first) && (second == t.second) && (third == t.third);
+			Tuple3<T> t = (Tuple3<T>)obj;
+			return EqualityComparer<T>.Default.Equals(first, t.first) && EqualityComparer<T>.Default.Equals(second, t.second) && EqualityComparer<T>.Default.Equals(third, t.third);
 		}
 
 		public override int GetHashCode() {
@@ -637,11 +640,11 @@ public class MazeGenerator : MonoBehaviour {
 	#endregion
 
 	#region Tuple2 Definition
-	public class Tuple2 {
-		public int first { get; set; }
-		public int second { get; set; }
+	public class Tuple2<T> {
+		public T first { get; set; }
+		public T second { get; set; }
 
-		public Tuple2(int a, int b) {
+		public Tuple2(T a, T b) {
 			first = a;
 			second = b;
 		}
@@ -650,12 +653,16 @@ public class MazeGenerator : MonoBehaviour {
 			if (obj == null || GetType() != obj.GetType()) 
 				return false;
 
-			Tuple2 t = (Tuple2)obj;
-			return (first == t.first) && (second == t.second);
+			Tuple2<T> t = (Tuple2<T>)obj;
+			return EqualityComparer<T>.Default.Equals(first, t.first) && EqualityComparer<T>.Default.Equals(second, t.second);
 		}
 
 		public override int GetHashCode() {
-			return first ^ second;
+			//return first ^ second;
+			int hash = 17;
+			hash = hash * 31 + first.GetHashCode();
+			hash = hash * 31 + second.GetHashCode();
+			return hash;
 		}
 	}
 	#endregion
