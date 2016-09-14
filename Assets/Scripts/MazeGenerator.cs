@@ -143,6 +143,28 @@ public class MazeGenerator : MonoBehaviour {
 				blockList.Add (newCell);
 
 			}
+
+			// Carve out left, top and back side since want it to be completely open
+			for (int yy = 0; yy < m.mazeDimensions.second; ++yy) {
+				for(int zz = 0; zz < m.mazeDimensions.third; ++zz) {
+					m.Carve (0, yy, zz);
+				}
+			}
+
+			// Top
+			for (int xx = 0; xx < m.mazeDimensions.first; ++xx) {
+				for (int zz = 0; zz < m.mazeDimensions.third; ++zz) {
+					m.Carve (xx, m.mazeDimensions.second - 1, zz);
+				}
+			}
+				
+			// Back
+			for (int xx = 0; xx < m.mazeDimensions.first; ++xx) {
+				for (int yy = 0; yy < m.mazeDimensions.second; ++yy) {
+					m.Carve (xx, yy, m.mazeDimensions.third - 1);
+				}
+			}
+
 		}
 	}
 	#endregion
@@ -160,8 +182,8 @@ public class MazeGenerator : MonoBehaviour {
 		public GameObject parent { get; set; }			// Empty Parent object containing all the maze block gameobjects
 		public Tuple3<int> startingPosition { get; set; } 	// Coordinates for startingPosition/entrance
 		public Tuple3<int> exitPosition { get; set; }		// Coordinates for exitPosition
+		public Tuple3<int> mazeDimensions;					// Maze Dimensions
 
-		protected Tuple3<int> _mazeDimensions;		// Maze Dimensions
 		protected BlockFace _exitDirection;		// The side of the cube that the exit protrudes from
 		protected Block[, ,] _blockMaze;		// 3D array of actual blocks of the maze
 		protected bool[, ,] _blockMap;			// 3D array of which block locations, false = block, true = empty space
@@ -173,13 +195,13 @@ public class MazeGenerator : MonoBehaviour {
 		public Maze(GameObject mazeParent, GameObject[] blockTypes, Tuple3<int> dimensions, Tuple3<int> startingPosition, MazeAlgorithmMode mazeAlgo = MazeAlgorithmMode.GrowingTree) {
 			parent = mazeParent;
 			rotating = false;
-			_mazeDimensions = dimensions;
+			mazeDimensions = dimensions;
 			this.startingPosition = startingPosition;
 			this.exitPosition = null;
 			_blockTypes = blockTypes;
 
-			_blockMaze = new Block[_mazeDimensions.first, _mazeDimensions.second, _mazeDimensions.third];
-			_blockMap = new bool[_mazeDimensions.first, _mazeDimensions.second, _mazeDimensions.third];
+			_blockMaze = new Block[mazeDimensions.first, mazeDimensions.second, mazeDimensions.third];
+			_blockMap = new bool[mazeDimensions.first, mazeDimensions.second, mazeDimensions.third];
 
 			SetAlgorithm(mazeAlgo);
 		}
@@ -293,10 +315,10 @@ public class MazeGenerator : MonoBehaviour {
 			List<Tuple3<int> > candidateExits = new List<Tuple3<int> > ();
 
 			// Opposite Wall
-			for (int i = 0; i < _mazeDimensions.first; ++i) {
-				for (int j = 0; j < _mazeDimensions.second; ++j) {
-					if (_blockMap [i, j, _mazeDimensions.third - 1]) {
-						candidateExits.Add (new Tuple3<int> (i, j, _mazeDimensions.third - 1));
+			for (int i = 0; i < mazeDimensions.first; ++i) {
+				for (int j = 0; j < mazeDimensions.second; ++j) {
+					if (_blockMap [i, j, mazeDimensions.third - 1]) {
+						candidateExits.Add (new Tuple3<int> (i, j, mazeDimensions.third - 1));
 					}
 				}
 			}
@@ -309,8 +331,8 @@ public class MazeGenerator : MonoBehaviour {
 			}
 
 			// Left Wall
-			for (int i = 0; i < _mazeDimensions.second; ++i) {
-				for (int j = 0; j < _mazeDimensions.third; ++j) {
+			for (int i = 0; i < mazeDimensions.second; ++i) {
+				for (int j = 0; j < mazeDimensions.third; ++j) {
 					if (_blockMap [0, i, j]) {
 						candidateExits.Add (new Tuple3<int>(0, i, j));
 					}
@@ -325,10 +347,10 @@ public class MazeGenerator : MonoBehaviour {
 			}
 
 			// Right Wall
-			for (int i = 0; i < _mazeDimensions.second; ++i) {
-				for (int j = 0; j < _mazeDimensions.third; ++j) {
-					if (_blockMap [_mazeDimensions.first - 1, i, j]) {
-						candidateExits.Add (new Tuple3<int>(_mazeDimensions.first - 1, i, j));
+			for (int i = 0; i < mazeDimensions.second; ++i) {
+				for (int j = 0; j < mazeDimensions.third; ++j) {
+					if (_blockMap [mazeDimensions.first - 1, i, j]) {
+						candidateExits.Add (new Tuple3<int>(mazeDimensions.first - 1, i, j));
 					}
 				}
 			}
@@ -348,15 +370,15 @@ public class MazeGenerator : MonoBehaviour {
 		// Instantiate Maze Block GameObjects into the world
 		public void InstantiateMaze() {
 			// Instantiate Parent
-			Tuple3<float> pivotCenter = new Tuple3<float> (_blockTypes [(int)BlockType.Metal].transform.lossyScale.x * _mazeDimensions.first / 2,
-				_blockTypes [(int)BlockType.Metal].transform.lossyScale.y * _mazeDimensions.second / 2,
-				_blockTypes [(int)BlockType.Metal].transform.lossyScale.z * _mazeDimensions.third / 2);
+			Tuple3<float> pivotCenter = new Tuple3<float> (_blockTypes [(int)BlockType.Metal].transform.lossyScale.x * mazeDimensions.first / 2,
+				_blockTypes [(int)BlockType.Metal].transform.lossyScale.y * mazeDimensions.second / 2,
+				_blockTypes [(int)BlockType.Metal].transform.lossyScale.z * mazeDimensions.third / 2);
 			parent = Instantiate(parent, new Vector3(pivotCenter.first, pivotCenter.second, pivotCenter.third), Quaternion.identity) as GameObject;
 
 
-			for (int i = 0; i < _mazeDimensions.first; ++i) {
-				for (int j = 0; j < _mazeDimensions.second; ++j) {
-					for (int k = 0; k < _mazeDimensions.third; ++k) {
+			for (int i = 0; i < mazeDimensions.first; ++i) {
+				for (int j = 0; j < mazeDimensions.second; ++j) {
+					for (int k = 0; k < mazeDimensions.third; ++k) {
 						if(!_blockMap[i, j, k]) {
 							_blockMaze [i, j, k] = new Block (_blockTypes[(int)BlockType.Metal], parent, i, j, k);
 						}
@@ -372,7 +394,7 @@ public class MazeGenerator : MonoBehaviour {
 
 		// Marks a space on the blockMap as empty (carve)
 		public bool Carve(int x, int y, int z) {
-			if(x >= 0 && x < _mazeDimensions.first && y >= 0 && y < _mazeDimensions.second && z >= 0 && z < _mazeDimensions.third) {
+			if(x >= 0 && x < mazeDimensions.first && y >= 0 && y < mazeDimensions.second && z >= 0 && z < mazeDimensions.third) {
 				_blockMap [x, y, z] = true;
 				return true;
 			}
@@ -412,7 +434,7 @@ public class MazeGenerator : MonoBehaviour {
 
 		// Create a block at the given coordinates, given a block type
 		public bool CreateBlock(int blockType, int x, int y, int z) {
-			if (x > _mazeDimensions.first || y > _mazeDimensions.second || z > _mazeDimensions.third) {
+			if (x > mazeDimensions.first || y > mazeDimensions.second || z > mazeDimensions.third) {
 				return false;
 			}
 
@@ -425,7 +447,7 @@ public class MazeGenerator : MonoBehaviour {
 
 		// Place a given block type at the given coordinates
 		public bool PlaceBlock(Block b, int x, int y, int z) {
-			if (x > _mazeDimensions.first || y > _mazeDimensions.second || z > _mazeDimensions.third) {
+			if (x > mazeDimensions.first || y > mazeDimensions.second || z > mazeDimensions.third) {
 				return false;
 			}
 
@@ -445,12 +467,12 @@ public class MazeGenerator : MonoBehaviour {
 			List<Tuple3<int> > neighbours = new List<Tuple3<int> > ();
 
 			// Top
-			if (y + 2 < _mazeDimensions.second && _blockMap [x, y + 2, z]) {
+			if (y + 2 < mazeDimensions.second && _blockMap [x, y + 2, z]) {
 				neighbours.Add (new Tuple3<int>(x, y + 2, z));
 			}
 
 			// Front
-			if (z + 2 < _mazeDimensions.third && _blockMap [x, y, z + 2]) {
+			if (z + 2 < mazeDimensions.third && _blockMap [x, y, z + 2]) {
 				neighbours.Add (new Tuple3<int>(x, y, z + 2));
 			}
 
@@ -465,7 +487,7 @@ public class MazeGenerator : MonoBehaviour {
 			}
 
 			// Right
-			if (x + 2 < _mazeDimensions.first && _blockMap [x + 2, y, z]) {
+			if (x + 2 < mazeDimensions.first && _blockMap [x + 2, y, z]) {
 				neighbours.Add (new Tuple3<int>(x + 2, y, z));
 			}
 
@@ -484,12 +506,12 @@ public class MazeGenerator : MonoBehaviour {
 			int z = location.third;
 
 			// Top
-			if (y + 2 < _mazeDimensions.second && _blockMap [x, y + 2, z] && !from.Equals(new Tuple3<int>(x, y + 2, z))) {
+			if (y + 2 < mazeDimensions.second && _blockMap [x, y + 2, z] && !from.Equals(new Tuple3<int>(x, y + 2, z))) {
 				return true;
 			}
 
 			// Front
-			if (z + 2 < _mazeDimensions.third && _blockMap [x, y, z + 2] && !from.Equals(new Tuple3<int>(x, y, z + 2)))  {
+			if (z + 2 < mazeDimensions.third && _blockMap [x, y, z + 2] && !from.Equals(new Tuple3<int>(x, y, z + 2)))  {
 				return true;
 			}
 
@@ -504,7 +526,7 @@ public class MazeGenerator : MonoBehaviour {
 			}
 
 			// Right
-			if (x + 2 < _mazeDimensions.first && _blockMap [x + 2, y, z] && !from.Equals(new Tuple3<int>(x + 2, y, z)))  {
+			if (x + 2 < mazeDimensions.first && _blockMap [x + 2, y, z] && !from.Equals(new Tuple3<int>(x + 2, y, z)))  {
 				return true;
 			}
 
@@ -525,12 +547,12 @@ public class MazeGenerator : MonoBehaviour {
 			List<Tuple3<int> > neighbours = new List<Tuple3<int> > ();
 
 			// Top
-			if (y + 2 < _mazeDimensions.second && !_blockMap [x, y + 2, z]) {
+			if (y + 2 < mazeDimensions.second && !_blockMap [x, y + 2, z]) {
 				neighbours.Add (new Tuple3<int>(x, y + 2, z));
 			}
 
 			// Front
-			if (z + 2 < _mazeDimensions.third && !_blockMap [x, y, z + 2]) {
+			if (z + 2 < mazeDimensions.third && !_blockMap [x, y, z + 2]) {
 				neighbours.Add (new Tuple3<int>(x, y, z + 2));
 			}
 
@@ -545,7 +567,7 @@ public class MazeGenerator : MonoBehaviour {
 			}
 
 			// Right
-			if (x + 2 < _mazeDimensions.first && !_blockMap [x + 2, y, z]) {
+			if (x + 2 < mazeDimensions.first && !_blockMap [x + 2, y, z]) {
 				neighbours.Add (new Tuple3<int>(x + 2, y, z));
 			}
 
