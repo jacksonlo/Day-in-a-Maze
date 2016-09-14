@@ -90,16 +90,6 @@ public class MazeGenerator : MonoBehaviour {
 		return maze;
 	}
 
-	// Shuffle Maze, mazeType parameter for type of shuffling algorithm
-//	private Maze ShuffleMaze(Maze maze, MazeType mazeType) {
-//		// Generate a maze positioning with the mazeType
-//
-//		// On another thread, A* calculate the moves to sliding puzzle into the maze
-//
-//		// On another thread execute those moves in sequence
-//	}
-
-
 	#region Maze Algorithm Class Definition
 	private class MazeAlgorithm {
 		public static void GrowingTree(Maze m) { 
@@ -141,30 +131,10 @@ public class MazeGenerator : MonoBehaviour {
 
 				// Add it to cell list
 				blockList.Add (newCell);
-
 			}
 
-			// Carve out left, top and back side since want it to be completely open
-			for (int yy = 0; yy < m.mazeDimensions.second; ++yy) {
-				for(int zz = 0; zz < m.mazeDimensions.third; ++zz) {
-					m.Carve (0, yy, zz);
-				}
-			}
-
-			// Top
-			for (int xx = 0; xx < m.mazeDimensions.first; ++xx) {
-				for (int zz = 0; zz < m.mazeDimensions.third; ++zz) {
-					m.Carve (xx, m.mazeDimensions.second - 1, zz);
-				}
-			}
-				
-			// Back
-			for (int xx = 0; xx < m.mazeDimensions.first; ++xx) {
-				for (int yy = 0; yy < m.mazeDimensions.second; ++yy) {
-					m.Carve (xx, yy, m.mazeDimensions.third - 1);
-				}
-			}
-
+			// Carve out full faces for nicer maze
+			while(m.CarveFullFaces() > 0) {}
 		}
 	}
 	#endregion
@@ -204,6 +174,15 @@ public class MazeGenerator : MonoBehaviour {
 			_blockMap = new bool[mazeDimensions.first, mazeDimensions.second, mazeDimensions.third];
 
 			SetAlgorithm(mazeAlgo);
+		}
+
+		// Shuffle Maze, mazeType parameter for type of shuffling algorithm
+		public void ShuffleMaze(MazeAlgorithmMode mazeAlgo) {
+			// Generate a maze positioning with the mazeType
+
+			// On another thread, A* calculate the moves to sliding puzzle into the maze
+
+			// On another thread execute those moves in sequence
 		}
 			
 		// Sets the maze generation algorithm for use during calculatemaze
@@ -592,6 +571,128 @@ public class MazeGenerator : MonoBehaviour {
 			}
 
 			return neighbours;
+		}
+
+		// Check's if a block exists at the given coordinates, 0 for no block, 1 for block, -1 for out of range
+		public bool HasBlock(int x, int y, int z) {
+			// Check for in range
+			if (x < 0 || x >= mazeDimensions.first || y < 0 || y >= mazeDimensions.second || z < 0 || z >= mazeDimensions.third) {
+				return false;
+			}
+
+			if (_blockMap [x, y, z]) {
+				return false;
+			} else {
+				return true;
+			}
+		}
+		public bool HasBlock(Tuple3<int> t) {
+			return HasBlock (t.first, t.second, t.third);
+		}
+
+		// Cuts faces that have not been carved up to the minHoles, returns an int of how many faces were carved
+		public int CarveFullFaces(int minHoles = 0) {
+			int carvedFaces = 0;
+
+			// Check each side to carve
+			int firstD = 0;
+			int secondD = 0;
+			foreach (BlockFace face in System.Enum.GetValues(typeof(BlockFace))) {
+				bool exit = false;
+
+				switch (face) {
+				case BlockFace.Left:
+				case BlockFace.Right:
+					firstD = mazeDimensions.second;
+					secondD = mazeDimensions.third;
+					break;
+				case BlockFace.Top:
+				case BlockFace.Bottom:
+					firstD = mazeDimensions.first;
+					secondD = mazeDimensions.third;
+					break;
+				case BlockFace.Back:
+				case BlockFace.Front:
+					firstD = mazeDimensions.first;
+					secondD = mazeDimensions.second;
+					break;
+				}
+
+				firstD--;
+				secondD--;
+
+				int holeCount = 0;
+				for (int i = 0; i <= firstD; ++i) {
+					for (int j = 0; j <= secondD; ++j) {
+						Tuple3<int> coord = null;
+
+						switch (face) {
+						case BlockFace.Left:
+							coord = new Tuple3<int> (0, firstD, secondD);
+							break;
+						case BlockFace.Right:
+							coord = new Tuple3<int> (mazeDimensions.first - 1, firstD, secondD);
+							break;
+						case BlockFace.Top:
+							coord = new Tuple3<int> (firstD, mazeDimensions.second - 1, secondD);
+							break;
+						case BlockFace.Bottom:
+							coord = new Tuple3<int> (firstD, 0, secondD);
+							break;
+						case BlockFace.Back:
+							coord = new Tuple3<int> (firstD, secondD, mazeDimensions.third - 1);
+							break;
+						case BlockFace.Front:
+							coord = new Tuple3<int> (firstD, secondD, 0);
+							break;
+						}
+
+						if (!HasBlock (coord)) {
+							holeCount++;
+							if (holeCount > minHoles) {
+								exit = true;
+								break;
+							}
+						}
+					}
+					if (exit) {
+						break;
+					}
+				}
+
+				// Carve face
+				if (!exit) {
+					carvedFaces++;
+					for (int i = 0; i < firstD; ++i) {
+						for (int j = 0; j < secondD; ++j) {
+							Tuple3<int> coord = null;
+
+							switch (face) {
+							case BlockFace.Left:
+								coord = new Tuple3<int> (0, firstD, secondD);
+								break;
+							case BlockFace.Right:
+								coord = new Tuple3<int> (mazeDimensions.first - 1, firstD, secondD);
+								break;
+							case BlockFace.Top:
+								coord = new Tuple3<int> (firstD, mazeDimensions.second - 1, secondD);
+								break;
+							case BlockFace.Bottom:
+								coord = new Tuple3<int> (firstD, 0, secondD);
+								break;
+							case BlockFace.Back:
+								coord = new Tuple3<int> (firstD, secondD, mazeDimensions.third - 1);
+								break;
+							case BlockFace.Front:
+								coord = new Tuple3<int> (firstD, secondD, 0);
+								break;
+							}
+							Carve (coord);
+						}
+					}
+				}
+			}
+			return carvedFaces;
 		}
 			
 	}
