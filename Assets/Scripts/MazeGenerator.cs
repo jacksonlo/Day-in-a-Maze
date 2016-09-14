@@ -142,7 +142,7 @@ public class MazeGenerator : MonoBehaviour {
 				// Add it to cell list
 				blockList.Add (newCell);
 
-			}	
+			}
 		}
 	}
 	#endregion
@@ -209,10 +209,10 @@ public class MazeGenerator : MonoBehaviour {
 				rotationDirection = Vector3.left;
 				break;
 			case Direction.Left:
-				rotationDirection = Vector3.down;
+				rotationDirection = Vector3.up;
 				break;
 			case Direction.Right:
-				rotationDirection = Vector3.up;
+				rotationDirection = Vector3.down;
 				break;
 			case Direction.Clockwise:
 				rotationDirection = Vector3.forward;
