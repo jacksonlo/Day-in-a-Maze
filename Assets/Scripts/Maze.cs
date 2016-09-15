@@ -2,10 +2,18 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public enum Direction {Up, Down, Left, Right, Clockwise, CounterClockwise};
+public enum Direction {
+	Up, 
+	Down, 
+	Left, 
+	Right, 
+	Clockwise, 
+	CounterClockwise
+};
 
 public class Maze {
 	public delegate void AlgorithmDelegate(Maze m);	// Delegate for Maze algorithm
+	public delegate List<Tuple2<Tuple3<int> > > ShuffleDelegate(Maze m, HeuristicMode hm);	// Delegate for Shuffle Algorithm
 
 	public bool rotating { get; set; }				// Rotation status
 	public float rotationTime { get; set; }			// Time spent rotating
@@ -18,15 +26,18 @@ public class Maze {
 	public Tuple3<int> exitPosition { get; set; }		// Coordinates for exitPosition
 	public Tuple3<int> mazeDimensions;					// Maze Dimensions
 
-	protected BlockFace _exitDirection;		// The side of the cube that the exit protrudes from
-	protected Block[, ,] _blockMaze;		// 3D array of actual blocks of the maze
-	protected bool[, ,] _blockMap;			// 3D array of which block locations, false = block, true = empty space
-	protected GameObject[] _blockTypes;		// The blocktypes
-
-	private AlgorithmDelegate mazeAlgorithm;		// Maze Algorithm set
+	private BlockFace _exitDirection;		// The side of the cube that the exit protrudes from
+	private Block[, ,] _blockMaze;			// 3D array of actual blocks of the maze
+	private bool[, ,] _blockMap;			// 3D array of which block locations, false = block, true = empty space
+	private bool[, ,] _blockMapOld;			// same as blockmap but used as for holding old ones
+	private GameObject[] _blockTypes;		// The blocktypes
+	private AlgorithmDelegate _mazeAlgorithm;		// Maze Algorithm delgate set
+	private MazeAlgorithmMode _mazeAlgorithmMode;	// Maze Algorithm Mode set
+	private ShuffleDelegate _shuffleAlgorithm;		// Shuffle Algorithm delegate set
+	private ShuffleAlgorithmMode _shuffleAlgorithmMode; // Shuffle Algorithm Mode set
 
 	// Constructor
-	public Maze(GameObject mazeParent, GameObject[] blockTypes, Tuple3<int> dimensions, Tuple3<int> startingPosition, MazeAlgorithmMode mazeAlgo = MazeAlgorithmMode.GrowingTree) {
+	public Maze(GameObject mazeParent, GameObject[] blockTypes, Tuple3<int> dimensions, Tuple3<int> startingPosition, MazeAlgorithmMode mazeAlgo = MazeAlgorithmMode.GrowingTree, ShuffleAlgorithmMode shuffleAlgo = ShuffleAlgorithmMode.AStar) {
 		parent = mazeParent;
 		rotating = false;
 		mazeDimensions = dimensions;
@@ -37,23 +48,49 @@ public class Maze {
 		_blockMaze = new Block[mazeDimensions.first, mazeDimensions.second, mazeDimensions.third];
 		_blockMap = new bool[mazeDimensions.first, mazeDimensions.second, mazeDimensions.third];
 
-		SetAlgorithm(mazeAlgo);
+		SetAlgorithm (mazeAlgo);
+		SetShuffle (shuffleAlgo);
 	}
 
 	// Shuffle Maze, mazeType parameter for type of shuffling algorithm
 	public void ShuffleMaze(MazeAlgorithmMode mazeAlgo) {
+		MazeAlgorithmMode originalAlgo = _mazeAlgorithmMode;
+
 		// Generate a maze positioning with the mazeType
+		SetAlgorithm(mazeAlgo);
+		_blockMapOld = _blockMap;
+		CalculateMaze ();
 
 		// On another thread, A* calculate the moves to sliding puzzle into the maze
+		List<Tuple2<Tuple3<int> > > moves = _shuffleAlgorithm(this, HeuristicMode.Manhattan);
 
-		// On another thread execute those moves in sequence
+		// On another thread execute those moves in sequence, allowing some to run concurrently if they do not block eachother
+		ExecuteMoves(moves);
+
+		// Set algorithm back
+		SetAlgorithm (originalAlgo);
+	}
+
+	// Executes the list of moves
+	public void ExecuteMoves(List<Tuple2<Tuple3<int> > > moves) {
+	
+	}
+
+	// Sets the shuffle algorithm, defaults to AStar
+	public void SetShuffle(ShuffleAlgorithmMode shuffleMode) {
+		switch (shuffleMode) {
+		case ShuffleAlgorithmMode.AStar:
+			_shuffleAlgorithm = new ShuffleDelegate (ShuffleAlgorithm.AStar);
+			break;
+		}
 	}
 
 	// Sets the maze generation algorithm for use during calculatemaze
 	public void SetAlgorithm(MazeAlgorithmMode mazeAlgo) {
+		_mazeAlgorithmMode = mazeAlgo;
 		switch (mazeAlgo) {
 		case MazeAlgorithmMode.GrowingTree:
-			mazeAlgorithm = new AlgorithmDelegate (MazeAlgorithm.GrowingTree);
+			_mazeAlgorithm = new AlgorithmDelegate (MazeAlgorithm.GrowingTree);
 			break;
 		}
 	}
@@ -110,7 +147,7 @@ public class Maze {
 	}
 
 	// Generates platform to entrance
-	public virtual void GenerateEntrancePath(GameObject path, float length) {
+	public void GenerateEntrancePath(GameObject path, float length) {
 		float width = _blockTypes[0].transform.lossyScale.x;
 		for (int i = 0; i < length; ++i) {
 			GameObject.Instantiate (path, new Vector3 (startingPosition.first * width, startingPosition.second * width - width + 1.25f, startingPosition.third * width - i * width - 6.5f), Quaternion.identity);
@@ -118,7 +155,7 @@ public class Maze {
 	}
 
 	// Generates platform out of exit
-	public virtual void GenerateExitPath(GameObject path, float length) {
+	public void GenerateExitPath(GameObject path, float length) {
 		float width = _blockTypes[0].transform.lossyScale.x;
 		Quaternion rotation = Quaternion.identity;
 		switch (_exitDirection) {
@@ -232,7 +269,7 @@ public class Maze {
 
 	// Calculate Maze based on set algorithm
 	public void CalculateMaze() {
-		mazeAlgorithm (this);
+		_mazeAlgorithm (this);
 	}
 
 	// Marks a space on the blockMap as empty (carve)

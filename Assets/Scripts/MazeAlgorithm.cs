@@ -2,9 +2,13 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public enum MazeAlgorithmMode {GrowingTree};
+public enum MazeAlgorithmMode {
+	GrowingTree
+};
 
 public class MazeAlgorithm {
+	
+	// Maze Generation Algorithms
 	public static void GrowingTree(Maze m) { 
 		List<Tuple3<int> > blockList = new List<Tuple3<int> >();
 		blockList.Add (new Tuple3<int> (m.startingPosition.first, m.startingPosition.second, m.startingPosition.third));

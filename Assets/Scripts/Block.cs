@@ -5,7 +5,6 @@ using System.Collections.Generic;
 public enum BlockType {Metal = 0, White = 1};
 public enum BlockFace {Left, Right, Back, Front, Bottom, Top};
 
-
 public class Block {
 	public int x { get; set; }
 	public int y { get; set; }
