@@ -11,6 +11,13 @@ public enum Direction {
 	CounterClockwise
 };
 
+public enum BlockMap {
+	Old,
+	Default,
+	Custom
+};
+
+
 public class Maze {
 	public delegate void AlgorithmDelegate(Maze m);	// Delegate for Maze algorithm
 	public delegate List<Tuple2<Tuple3<int> > > ShuffleDelegate(Maze m, HeuristicMode hm);	// Delegate for Shuffle Algorithm
@@ -62,7 +69,7 @@ public class Maze {
 		CalculateMaze ();
 
 		// On another thread, A* calculate the moves to sliding puzzle into the maze
-		List<Tuple2<Tuple3<int> > > moves = _shuffleAlgorithm(this, HeuristicMode.Manhattan);
+		List<Tuple2<Tuple3<int> > > moves = _shuffleAlgorithm(this, HeuristicMode.Misplaced);
 
 		// On another thread execute those moves in sequence, allowing some to run concurrently if they do not block eachother
 		ExecuteMoves(moves);
@@ -74,6 +81,16 @@ public class Maze {
 	// Executes the list of moves
 	public void ExecuteMoves(List<Tuple2<Tuple3<int> > > moves) {
 	
+	}
+
+	// Returns the block map
+	public bool[, ,] GetBlockMap() {
+		return this._blockMap;
+	}
+
+	// Returns the old block map
+	public bool[, ,] GetBlockMapOld() {
+		return this._blockMapOld;
 	}
 
 	// Sets the shuffle algorithm, defaults to AStar
@@ -339,7 +356,20 @@ public class Maze {
 	}
 
 	// Get all neighbours that are spaces
-	public List<Tuple3<int> > GetSpaceNeighbours(Tuple3<int> location) {
+	public List<Tuple3<int> > GetSpaceNeighbours(Tuple3<int> location, BlockMap selectedBm = this._blockMap, bool[, ,] customBlockMap = null) {
+		bool[, ,] bm;
+		switch (selectedBm) {
+		case BlockMap.Default:
+			bm = this._blockMap;
+			break;
+		case BlockMap.Old:
+			bm = this._blockMapOld;
+			break;
+		case BlockMap.Custom:
+			bm = customBlockMap;
+			break;
+		}
+
 		int x = location.first;
 		int y = location.second;
 		int z = location.third;
@@ -347,36 +377,39 @@ public class Maze {
 		List<Tuple3<int> > neighbours = new List<Tuple3<int> > ();
 
 		// Top
-		if (y + 2 < mazeDimensions.second && _blockMap [x, y + 2, z]) {
+		if (y + 2 < mazeDimensions.second && bm [x, y + 2, z]) {
 			neighbours.Add (new Tuple3<int>(x, y + 2, z));
 		}
 
 		// Front
-		if (z + 2 < mazeDimensions.third && _blockMap [x, y, z + 2]) {
+		if (z + 2 < mazeDimensions.third && bm [x, y, z + 2]) {
 			neighbours.Add (new Tuple3<int>(x, y, z + 2));
 		}
 
 		// Bottom
-		if (y - 2 >= 0 && _blockMap [x, y - 2, z]) {
+		if (y - 2 >= 0 && bm [x, y - 2, z]) {
 			neighbours.Add (new Tuple3<int>(x, y - 2, z));
 		}
 
 		// Left
-		if (x - 2 >= 0 && _blockMap [x - 2, y, z]) {
+		if (x - 2 >= 0 && bm [x - 2, y, z]) {
 			neighbours.Add (new Tuple3<int>(x - 2, y, z));
 		}
 
 		// Right
-		if (x + 2 < mazeDimensions.first && _blockMap [x + 2, y, z]) {
+		if (x + 2 < mazeDimensions.first && bm [x + 2, y, z]) {
 			neighbours.Add (new Tuple3<int>(x + 2, y, z));
 		}
 
 		// Back
-		if (z - 2 >= 0 && _blockMap [x, y, z - 2]) {
+		if (z - 2 >= 0 && bm [x, y, z - 2]) {
 			neighbours.Add (new Tuple3<int>(x, y, z - 2));
 		}
 
 		return neighbours;
+	}
+	public List<Tuple3<int> > GetSpaceNeighbours(int x, int y, int z, BlockMap bm = this._blockMap, bool[, ,] customBlockMap = null) {
+		return GetSpaceNeighbours (new Tuple3<int> (x, y, z), bm, customBlockMap);
 	}
 
 	// Returns true if the location has neighbours that are spaces
