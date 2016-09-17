@@ -43,6 +43,8 @@ public class MazeGenerator : MonoBehaviour {
 					m.Rotate (Direction.Clockwise);
 				} else if (Input.GetKeyDown (KeyCode.Period)) {
 					m.Rotate (Direction.CounterClockwise);
+				} else if (Input.GetKeyDown (KeyCode.Backslash)) {
+					m.ShuffleMaze ();
 				}
 			}
 		}

@@ -42,6 +42,7 @@ public class Maze {
 	private MazeAlgorithmMode _mazeAlgorithmMode;	// Maze Algorithm Mode set
 	private ShuffleDelegate _shuffleAlgorithm;		// Shuffle Algorithm delegate set
 	private ShuffleAlgorithmMode _shuffleAlgorithmMode; // Shuffle Algorithm Mode set
+	private BlockMap _currentBlockMap; 					// Current BlockMap the maze is instantiated as
 
 	// Constructor
 	public Maze(GameObject mazeParent, GameObject[] blockTypes, Tuple3<int> dimensions, Tuple3<int> startingPosition, MazeAlgorithmMode mazeAlgo = MazeAlgorithmMode.GrowingTree, ShuffleAlgorithmMode shuffleAlgo = ShuffleAlgorithmMode.AStar) {
@@ -59,6 +60,16 @@ public class Maze {
 		SetShuffle (shuffleAlgo);
 	}
 
+	// Moves a block
+	public void MoveBlock(Tuple3<int> from, Tuple3<int> to) {
+		switch (_currentBlockMap) {
+		case BlockMap.Default:
+			break;
+		case BlockMap.Old:
+			break;
+		}
+	}
+
 	// Shuffle Maze, mazeType parameter for type of shuffling algorithm
 	public void ShuffleMaze(MazeAlgorithmMode mazeAlgo) {
 		MazeAlgorithmMode originalAlgo = _mazeAlgorithmMode;
@@ -67,12 +78,14 @@ public class Maze {
 		SetAlgorithm(mazeAlgo);
 		_blockMapOld = _blockMap;
 		CalculateMaze ();
+		_currentBlockMap = BlockMap.Old;
 
 		// On another thread, A* calculate the moves to sliding puzzle into the maze
 		List<Tuple2<Tuple3<int> > > moves = _shuffleAlgorithm(this, HeuristicMode.Misplaced);
 
 		// On another thread execute those moves in sequence, allowing some to run concurrently if they do not block eachother
 		ExecuteMoves(moves);
+		_currentBlockMap = BlockMap.Default;
 
 		// Set algorithm back
 		SetAlgorithm (originalAlgo);
@@ -80,7 +93,11 @@ public class Maze {
 
 	// Executes the list of moves
 	public void ExecuteMoves(List<Tuple2<Tuple3<int> > > moves) {
-	
+		// The list is in reverse order so execute from the end
+		for (int i = 0; i < moves.Count; ++i) {
+			MoveBlock (moves [i].first, moves [i].second);
+			moves.RemoveAt(moves.Count -1);
+		}
 	}
 
 	// Returns the block map
@@ -356,7 +373,7 @@ public class Maze {
 	}
 
 	// Get all neighbours that are spaces
-	public List<Tuple3<int> > GetSpaceNeighbours(Tuple3<int> location, BlockMap selectedBm = this._blockMap, bool[, ,] customBlockMap = null) {
+	public List<Tuple3<int> > GetSpaceNeighbours(Tuple3<int> location, BlockMap selectedBm = BlockMap.Default, bool[, ,] customBlockMap = null) {
 		bool[, ,] bm;
 		switch (selectedBm) {
 		case BlockMap.Default:
@@ -408,7 +425,7 @@ public class Maze {
 
 		return neighbours;
 	}
-	public List<Tuple3<int> > GetSpaceNeighbours(int x, int y, int z, BlockMap bm = this._blockMap, bool[, ,] customBlockMap = null) {
+	public List<Tuple3<int> > GetSpaceNeighbours(int x, int y, int z, BlockMap bm = BlockMap.Default, bool[, ,] customBlockMap = null) {
 		return GetSpaceNeighbours (new Tuple3<int> (x, y, z), bm, customBlockMap);
 	}
 
