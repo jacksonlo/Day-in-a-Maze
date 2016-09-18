@@ -71,7 +71,7 @@ public class Maze {
 	}
 
 	// Shuffle Maze, mazeType parameter for type of shuffling algorithm
-	public void ShuffleMaze(MazeAlgorithmMode mazeAlgo) {
+	public void ShuffleMaze(MazeAlgorithmMode mazeAlgo = MazeAlgorithmMode.GrowingTree) {
 		MazeAlgorithmMode originalAlgo = _mazeAlgorithmMode;
 
 		// Generate a maze positioning with the mazeType
@@ -374,7 +374,7 @@ public class Maze {
 
 	// Get all neighbours that are spaces
 	public List<Tuple3<int> > GetSpaceNeighbours(Tuple3<int> location, BlockMap selectedBm = BlockMap.Default, bool[, ,] customBlockMap = null) {
-		bool[, ,] bm;
+		bool[, ,] bm = null;
 		switch (selectedBm) {
 		case BlockMap.Default:
 			bm = this._blockMap;

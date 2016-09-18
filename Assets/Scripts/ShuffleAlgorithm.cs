@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 public enum ShuffleAlgorithmMode {
 	AStar
@@ -8,11 +9,11 @@ public enum ShuffleAlgorithmMode {
 
 public class ShuffleAlgorithm {
 
-	public delegate float HeuristicDelegate (int a, int b);
+	public delegate int HeuristicDelegate (bool[, ,] a, bool[, ,] b);
 
 	// Returns a sequence of block movements
 	public static List<Tuple2<Tuple3<int> > > AStar(Maze m, HeuristicMode hm) { 
-		HeuristicDelegate heuristic;
+		HeuristicDelegate heuristic = null;
 		switch (hm) {
 		case HeuristicMode.Misplaced:
 			heuristic = new HeuristicDelegate (Heuristic.Misplaced);
@@ -20,14 +21,13 @@ public class ShuffleAlgorithm {
 		}
 			
 		SortedDictionary<int, List<TreeNode<bool[, ,]> > > leaves = new SortedDictionary<int, List<TreeNode<bool[, ,]> > >();
+		leaves.Add (heuristic (m.GetBlockMapOld (), m.GetBlockMap ()), new List<TreeNode<bool[, ,]> > {new TreeNode<bool[, ,]> (m.GetBlockMapOld ())});
 
-		leaves.Add (heuristic(m.GetBlockMapOld(), m.GetBlockMap()), new TreeNode<bool[, ,]>(m.GetBlockMapOld ()));
-
-		bool done = false;
 		while (leaves.Count > 0) {
 			// Pop lowest key off leaves, q
-			int qKey = leaves.Keys [0];
-			TreeNode<bool[, ,]> node = leaves [qKey] [0];
+			KeyValuePair<int, List<TreeNode<bool[, ,]> > > kvp = leaves.First();
+			int qKey = kvp.Key;
+			TreeNode<bool[, ,]> node = kvp.Value[0];
 			leaves [qKey].RemoveAt (0);
 
 			// If that key# is empty, remove
@@ -73,7 +73,7 @@ public class ShuffleAlgorithm {
 								if (leaves.ContainsKey (heuristicValue)) {
 									leaves [heuristicValue].Add (child);
 								} else {
-									leaves.Add (heuristicValue, new List<TreeNode<bool[, ,]> > (child));
+									leaves.Add (heuristicValue, new List<TreeNode<bool[, ,]> > {child});
 								}
 							}
 						}

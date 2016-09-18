@@ -16,6 +16,9 @@ public class MazeGenerator : MonoBehaviour {
 	private List<Maze> _mazeList;
 	private float _rotationTime;
 
+	private Queue<GameObject> activeAnimations;
+	private Queue<GameObject> pendingAnimations;
+
 	// Use this for initialization
 	void Start () {
 		// Generate maze
@@ -25,6 +28,12 @@ public class MazeGenerator : MonoBehaviour {
 
 	// Update is called once per frame
 	void Update () {
+
+		// Shuffle Maze
+		if (Input.GetKeyDown (KeyCode.Backslash)) {
+			_mazeList[0].ShuffleMaze (MazeAlgorithmMode.GrowingTree);
+			return;
+		}
 
 		// Check for rotations and apply them
 		foreach (Maze m in _mazeList) {
@@ -43,11 +52,11 @@ public class MazeGenerator : MonoBehaviour {
 					m.Rotate (Direction.Clockwise);
 				} else if (Input.GetKeyDown (KeyCode.Period)) {
 					m.Rotate (Direction.CounterClockwise);
-				} else if (Input.GetKeyDown (KeyCode.Backslash)) {
-					m.ShuffleMaze ();
 				}
 			}
 		}
+
+		// Handle shuffle translations
 	}
 
 	// Method to Generate Maze

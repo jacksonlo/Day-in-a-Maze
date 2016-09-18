@@ -27,11 +27,4 @@ public class TreeNode<T> {
 	public bool RemoveChild(TreeNode<T> node) {
 		return children.Remove (node);
 	}
-
-	public void ApplyToChildren(Action<T> action) {
-		foreach (TreeNode<T> child in children) {
-			action (child);
-		}
-	}
-		
 }
