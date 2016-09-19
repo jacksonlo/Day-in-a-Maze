@@ -77,6 +77,8 @@ public class Maze {
 		// Generate a maze positioning with the mazeType
 		SetAlgorithm(mazeAlgo);
 		_blockMapOld = _blockMap;
+		_blockMap = new bool[mazeDimensions.first, mazeDimensions.second, mazeDimensions.third];
+
 		CalculateMaze ();
 		_currentBlockMap = BlockMap.Old;
 
@@ -95,6 +97,7 @@ public class Maze {
 	public void ExecuteMoves(List<Tuple2<Tuple3<int> > > moves) {
 		// The list is in reverse order so execute from the end
 		for (int i = 0; i < moves.Count; ++i) {
+			Debug.Log (moves [i].first + " -> " + moves [i].second);
 			MoveBlock (moves [i].first, moves [i].second);
 			moves.RemoveAt(moves.Count -1);
 		}
@@ -343,6 +346,7 @@ public class Maze {
 				_blockMap[from.first, from.second, from.third - 1] = true;
 			}
 		}
+		_blockMap [to.first, to.second, to.third] = true;
 		return true;
 	}
 

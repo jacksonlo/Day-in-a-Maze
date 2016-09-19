@@ -21,7 +21,8 @@ public class ShuffleAlgorithm {
 		}
 			
 		SortedDictionary<int, List<TreeNode<bool[, ,]> > > leaves = new SortedDictionary<int, List<TreeNode<bool[, ,]> > >();
-		leaves.Add (heuristic (m.GetBlockMapOld (), m.GetBlockMap ()), new List<TreeNode<bool[, ,]> > {new TreeNode<bool[, ,]> (m.GetBlockMapOld ())});
+		bool[, ,] targetMap = m.GetBlockMap ();
+		leaves.Add (heuristic (m.GetBlockMapOld (), targetMap), new List<TreeNode<bool[, ,]> > {new TreeNode<bool[, ,]> (m.GetBlockMapOld ())});
 
 		while (leaves.Count > 0) {
 			// Pop lowest key off leaves, q
@@ -51,9 +52,9 @@ public class ShuffleAlgorithm {
 			}
 
 			// Generate q's children
-			for (int x = 0; x < node.value.Length; ++x) {
-				for (int y = 0; y < node.value.Length; ++y) {
-					for (int z = 0; z < node.value.Length; ++z) {
+			for (int x = 0; x < node.value.GetLength(0); ++x) {
+				for (int y = 0; y < node.value.GetLength(1); ++y) {
+					for (int z = 0; z < node.value.GetLength(2); ++z) {
 						// If it's a block, check for spaces around it
 						if (!node.value [x, y, z]) {
 							List<Tuple3<int> > children = m.GetSpaceNeighbours (x, y, z, BlockMap.Custom, node.value);
@@ -69,7 +70,7 @@ public class ShuffleAlgorithm {
 								Tuple3<int> changeFrom = new Tuple3<int>(x, y, z);
 								Tuple3<int> changeTo = new Tuple3<int>(children [i].first, children [i].second, children [i].third);
 								TreeNode<bool[, ,]> child = new TreeNode<bool[, ,]> (childMap, node, changeFrom, changeTo);
-								int heuristicValue = heuristic (node.value, child.value) + child.level;
+								int heuristicValue = heuristic (child.value, targetMap) + child.level;
 								if (leaves.ContainsKey (heuristicValue)) {
 									leaves [heuristicValue].Add (child);
 								} else {

@@ -51,6 +51,6 @@ public class MazeAlgorithm {
 		}
 
 		// Carve out full faces for nicer maze
-		while(m.CarveFullFaces() > 0) {}
+		// while(m.CarveFullFaces() > 0) {}
 	}
 }
