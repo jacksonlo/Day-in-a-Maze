@@ -71,14 +71,15 @@ public class MazeGenerator : MonoBehaviour {
 
 			// Growing Tree algorithm
 			maze = new Maze (empty, blockTypes, new Tuple3<int> (mazeX, mazeY, mazeZ), new Tuple3<int> (x, y, z), MazeAlgorithmMode.GrowingTree);
+			maze.SetExit (x, y, mazeZ - 1);
 
 			// Calculate Maze
 			maze.CalculateMaze ();
 
-			// Choose an Exit
-			if (!maze.ChooseExit ()) {
-				Debug.Log ("Failed to choose an exit");
-			}
+//			// Choose an Exit
+//			if (!maze.ChooseExit ()) {
+//				Debug.Log ("Failed to choose an exit");
+//			}
 
 			// Instantiate Blocks in maze
 			maze.InstantiateMaze ();

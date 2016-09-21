@@ -45,7 +45,7 @@ public class Maze {
 	private BlockMap _currentBlockMap; 					// Current BlockMap the maze is instantiated as
 
 	// Constructor
-	public Maze(GameObject mazeParent, GameObject[] blockTypes, Tuple3<int> dimensions, Tuple3<int> startingPosition, MazeAlgorithmMode mazeAlgo = MazeAlgorithmMode.GrowingTree, ShuffleAlgorithmMode shuffleAlgo = ShuffleAlgorithmMode.AStar) {
+	public Maze(GameObject mazeParent, GameObject[] blockTypes, Tuple3<int> dimensions, Tuple3<int> startingPosition, MazeAlgorithmMode mazeAlgo = MazeAlgorithmMode.GrowingTree, ShuffleAlgorithmMode shuffleAlgo = ShuffleAlgorithmMode.Directed) {
 		parent = mazeParent;
 		rotating = false;
 		mazeDimensions = dimensions;
@@ -650,4 +650,11 @@ public class Maze {
 		return carvedFaces;
 	}
 
+	// Sets the exit position
+	public void SetExit(int x, int y, int z) {
+		this.exitPosition = new Tuple3<int> (x, y, z);
+	}
+	public void SetExit(Tuple3<int> t) {
+		this.exitPosition = t;
+	}
 }

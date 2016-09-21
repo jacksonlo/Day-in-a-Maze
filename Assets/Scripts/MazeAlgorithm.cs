@@ -12,6 +12,7 @@ public class MazeAlgorithm {
 	public static void GrowingTree(Maze m) { 
 		List<Tuple3<int> > blockList = new List<Tuple3<int> >();
 		blockList.Add (new Tuple3<int> (m.startingPosition.first, m.startingPosition.second, m.startingPosition.third));
+		blockList.Add (new Tuple3<int> (m.exitPosition.first, m.exitPosition.second, m.exitPosition.third));
 
 		Tuple3<int> currentCell;
 		int x, y, z;

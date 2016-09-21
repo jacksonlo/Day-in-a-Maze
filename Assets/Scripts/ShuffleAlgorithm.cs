@@ -4,7 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 
 public enum ShuffleAlgorithmMode {
-	AStar
+	AStar,
+	Directed
 };
 
 public class ShuffleAlgorithm {
@@ -52,6 +53,7 @@ public class ShuffleAlgorithm {
 			}
 
 			// Generate q's children
+			int childrenCount = 0;
 			for (int x = 0; x < node.value.GetLength(0); ++x) {
 				for (int y = 0; y < node.value.GetLength(1); ++y) {
 					for (int z = 0; z < node.value.GetLength(2); ++z) {
@@ -76,13 +78,58 @@ public class ShuffleAlgorithm {
 								} else {
 									leaves.Add (heuristicValue, new List<TreeNode<bool[, ,]> > {child});
 								}
+								++childrenCount;
 							}
 						}
 					}
 				}
 			}
+			Debug.Log(childrenCount);
 		}
 		return null;
+	}
+
+	// Directed movement
+	public static List<Tuple2<Tuple3<int> > > Directed(Maze m, HeuristicMode hm) {
+		// Number each block in the original state
+		bool[, ,] originalMap = m.GetBlockMapOld();
+		Dictionary<int, Tuple3<int>> numberBlockMap = new Dictionary<int, Tuple3<int>> ();
+		int number = 0;
+		for (int i = 0; i < originalMap.GetLength (0); ++i) {
+			for (int j = 0; j < originalMap.GetLength (1); ++j) {
+				for (int k = 0; k < originalMap.GetLength (2); ++k) {
+					if (!originalMap [i, j, k]) {
+						numberBlockMap.Add(number++, new Tuple3<int>(i, j, k));
+					}
+				}
+			}
+		}
+
+		// Number each block in the target state
+		bool[, ,] targetMap = m.GetBlockMap();
+		Dictionary<int, Tuple3<int>> numberBlockMap2 = new Dictionary<int, Tuple3<int>> ();
+		number = 0;
+		for (int i = 0; i < targetMap.GetLength (0); ++i) {
+			for (int j = 0; j < targetMap.GetLength (1); ++j) {
+				for (int k = 0; k < targetMap.GetLength (2); ++k) {
+					if (!targetMap [i, j, k]) {
+						numberBlockMap2.Add(number++, new Tuple3<int>(i, j, k));
+					}
+				}
+			}
+		}
+
+		// Move each block to it's target space
+		List<Tuple2<Tuple3<int>>> moves = new List<Tuple2<Tuple3<int>>>();
+		for (int i = 0; i < number; ++i) {
+			Tuple3<int> inital = numberBlockMap [i];
+			Tuple3<int> target = numberBlockMap2 [i];
+
+			// Do a maze search algorithm on the old map, while checking for "new" roadblocks in the current state
+
+		}
+
+		return moves;
 	}
 }
 
