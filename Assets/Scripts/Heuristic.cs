@@ -58,10 +58,6 @@ public class Heuristic {
 			}
 		}
 
-//		if (currentNumber != targetNumber) {
-//			Debug.Log ("Error Block Mismatch! Current Blocks: " + currentNumber + " Target Blocks: " + targetNumber);
-//			return 0;
-//		}
 		Debug.Log ("Current Blocks: " + currentNumber + " Target Blocks: " + targetNumber);
 
 		// Get manhattan distance for each numbered block

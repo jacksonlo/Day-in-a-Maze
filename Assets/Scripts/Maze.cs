@@ -71,9 +71,48 @@ public class Maze {
 
 		// Generate a maze positioning with the mazeType
 		SetAlgorithm(mazeAlgo);
-		_blockMap = new bool[mazeDimensions.first, mazeDimensions.second, mazeDimensions.third];
 
-		CalculateMaze ();
+		int currentNumber = 0;
+		int targetNumber = 1;
+
+		while (currentNumber != targetNumber) {
+			_blockMap = new bool[mazeDimensions.first, mazeDimensions.second, mazeDimensions.third];
+			CalculateMaze ();
+
+			// Number every block in initial
+			currentNumber = 0;
+			for (int i = 0; i < _blockMaze.GetLength (0); ++i) {
+				for (int j = 0; j < _blockMaze.GetLength (1); ++j) {
+					for (int k = 0; k < _blockMaze.GetLength (2); ++k) {
+						// If it's a block, check if there is no block in target
+						if (_blockMaze [i, j, k] != null) {
+							++currentNumber;
+						}	
+					}
+				}
+			}
+
+			// Number every block in target
+			targetNumber = 0;
+			for (int i = 0; i < _blockMap.GetLength (0); ++i) {
+				for (int j = 0; j < _blockMap.GetLength (1); ++j) {
+					for (int k = 0; k < _blockMap.GetLength (2); ++k) {
+						// If it's a block, add
+						if (!_blockMap [i, j, k]) {
+							++targetNumber;
+						}	
+					}
+				}
+			}
+		}
+
+//		// Reconcile block counts
+//		if (currentNumber < targetNumber) {
+//			// Remove random blocks from target
+//
+//		} else if (currentNumber > targetNumber) {
+//			// Move extra blocks out of cube range
+//		}
 
 		// On another thread, A* calculate the moves to sliding puzzle into the maze
 		List<Tuple2<Tuple3<int> > > moves = _shuffleAlgorithm(this, HeuristicMode.MisplacedManhattan);
@@ -420,7 +459,7 @@ public class Maze {
 	public List<Tuple3<int> > GetSpaceNeighbours(int x, int y, int z, bool[, ,] givenMap = null) {
 		return GetSpaceNeighbours (new Tuple3<int> (x, y, z), givenMap);
 	}
-
+		
 	// Returns true if the location has neighbours that are spaces
 	public bool HasSpaceNeighbours(Tuple3<int> from, Tuple3<int> location) {
 		int x = location.first;

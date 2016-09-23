@@ -84,9 +84,9 @@ public class ShuffleAlgorithm {
 							// Attach parent to children treenode and add to leaves while calculating their heuristic value
 							for (int i = 0; i < children.Count; ++i) {
 								// Get childmap by swapping the block with the space
-								bool[, ,] childMap = node.value;
-								node.value [x, y, z] = true;
-								node.value [children [i].first, children [i].second, children [i].third] = false;
+								bool[, ,] childMap = Util.CopyMap(node.value);
+								childMap [x, y, z] = true;
+								childMap [children [i].first, children [i].second, children [i].third] = false;
 
 								// Attach parent to children and add to leaves with heuristic
 								Tuple3<int> changeFrom = new Tuple3<int>(x, y, z);
