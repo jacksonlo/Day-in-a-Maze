@@ -28,9 +28,4 @@ public class Tuple3<T> {
 		hash = hash * 23 + third.GetHashCode();
 		return hash;
 	}
-
-	public static Tuple3<T> operator -(Tuple3<T> a, Tuple3<T> b)
-	{
-		return new Tuple3<T>(a.first - b.first, a.second - b.second, a.third - b.third);
-	}
 }

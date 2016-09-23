@@ -28,6 +28,8 @@ public class Heuristic {
 	}
 
 	public static int MisplacedManhattan(bool[, ,] initial, bool[, ,] target) {
+		// Can refactor this to use 1 loop and 0 storage
+
 		// Number every block in initial
 		int currentNumber = 0;
 		Dictionary<int, Tuple3<int>> initialNumbering = new Dictionary<int, Tuple3<int>> ();
@@ -56,16 +58,28 @@ public class Heuristic {
 			}
 		}
 
-		if (currentNumber != targetNumber) {
-			Debug.Log ("Error Block Mismatch! Current Blocks: " + currentNumber + " Target Blocks: " + targetNumber);
-			return -1;
-		}
+//		if (currentNumber != targetNumber) {
+//			Debug.Log ("Error Block Mismatch! Current Blocks: " + currentNumber + " Target Blocks: " + targetNumber);
+//			return 0;
+//		}
+		Debug.Log ("Current Blocks: " + currentNumber + " Target Blocks: " + targetNumber);
 
 		// Get manhattan distance for each numbered block
 		int cost = 0;
-		for (int i = 0; i < currentNumber; ++i) {
-			Tuple3<int> manhattan = initialNumbering [i] - targetNumbering [i];
-			cost += Math.Abs (manhattan.first) + Math.Abs (manhattan.second) + Math.Abs (manhattan.third);
+		int c;
+		for (c = 0; c < Math.Min(currentNumber, targetNumber); ++c) {
+			cost += Math.Abs (initialNumbering [c].first - targetNumbering[c].first);
+			cost += Math.Abs (initialNumbering [c].second - targetNumbering[c].second);
+			cost += Math.Abs (initialNumbering [c].third - targetNumbering[c].third);
+		}
+
+		// Add extra blocks cost to get outside of the cube
+		for (; c < Math.Max (currentNumber, targetNumber); ++c) {
+			if (currentNumber > targetNumber) {
+				cost += Math.Min (initialNumbering [c].first, Math.Min (initialNumbering [c].second, initialNumbering [c].third));
+			} else {
+				cost += Math.Min (targetNumbering [c].first, Math.Min (targetNumbering [c].second, targetNumbering [c].third));
+			}
 		}
 
 		return cost;

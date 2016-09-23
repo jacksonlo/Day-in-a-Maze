@@ -151,8 +151,8 @@ public class ShuffleAlgorithm {
 		// Move each block to it's target space
 		List<Tuple2<Tuple3<int>>> moves = new List<Tuple2<Tuple3<int>>>();
 		for (int i = 0; i < currentNumber; ++i) {
-			Tuple3<int> inital = currentBlockMap [i];
-			Tuple3<int> target = targetBlockMap [i];
+			//Tuple3<int> inital = currentBlockMap [i];
+			//Tuple3<int> target = targetBlockMap [i];
 		}
 
 
