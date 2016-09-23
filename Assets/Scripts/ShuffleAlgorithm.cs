@@ -19,12 +19,32 @@ public class ShuffleAlgorithm {
 		case HeuristicMode.Misplaced:
 			heuristic = new HeuristicDelegate (Heuristic.Misplaced);
 			break;
+		case HeuristicMode.MisplacedManhattan:
+			heuristic = new HeuristicDelegate (Heuristic.MisplacedManhattan);
+			break;
 		}
 			
-		SortedDictionary<int, List<TreeNode<bool[, ,]> > > leaves = new SortedDictionary<int, List<TreeNode<bool[, ,]> > >();
+		// Set up current and target maps
+		Block[, ,] currentMaze = m.GetBlockMaze ();
+		bool[, ,] currentMap = new bool[currentMaze.GetLength (0), currentMaze.GetLength (1), currentMaze.GetLength (2)];
 		bool[, ,] targetMap = m.GetBlockMap ();
-		leaves.Add (heuristic (m.GetBlockMapOld (), targetMap), new List<TreeNode<bool[, ,]> > {new TreeNode<bool[, ,]> (m.GetBlockMapOld ())});
 
+		for (int i = 0; i < currentMap.GetLength(0); ++i) {
+			for (int j = 0; j < currentMap.GetLength(1); ++j) {
+				for (int k = 0; k < currentMap.GetLength(2); ++k) {
+					// If it's a block, check if there is no block in target
+					if (currentMaze [i, j, k] == null) {
+						currentMap [i, j, k] = true;
+					}	
+				}
+			}
+		}
+
+		// Set up leaves datastruct
+		SortedDictionary<int, List<TreeNode<bool[, ,]> > > leaves = new SortedDictionary<int, List<TreeNode<bool[, ,]> > >();
+		leaves.Add (heuristic (currentMap, targetMap), new List<TreeNode<bool[, ,]> > {new TreeNode<bool[, ,]> (currentMap)});
+
+		// Perform A*
 		while (leaves.Count > 0) {
 			// Pop lowest key off leaves, q
 			KeyValuePair<int, List<TreeNode<bool[, ,]> > > kvp = leaves.First();
@@ -59,7 +79,7 @@ public class ShuffleAlgorithm {
 					for (int z = 0; z < node.value.GetLength(2); ++z) {
 						// If it's a block, check for spaces around it
 						if (!node.value [x, y, z]) {
-							List<Tuple3<int> > children = m.GetSpaceNeighbours (x, y, z, BlockMap.Custom, node.value);
+							List<Tuple3<int> > children = m.GetSpaceNeighbours (x, y, z, node.value);
 
 							// Attach parent to children treenode and add to leaves while calculating their heuristic value
 							for (int i = 0; i < children.Count; ++i) {
@@ -91,15 +111,19 @@ public class ShuffleAlgorithm {
 
 	// Directed movement
 	public static List<Tuple2<Tuple3<int> > > Directed(Maze m, HeuristicMode hm) {
-		// Number each block in the original state
-		bool[, ,] originalMap = m.GetBlockMapOld();
-		Dictionary<int, Tuple3<int>> numberBlockMap = new Dictionary<int, Tuple3<int>> ();
-		int number = 0;
+		// Number each block in the current state and map it in the bool[, ,]
+		Block[, ,] originalMap = m.GetBlockMaze();
+		Dictionary<int, Tuple3<int>> currentBlockMap = new Dictionary<int, Tuple3<int>> ();
+		bool[, ,] currentMap = new bool[originalMap.GetLength (0), originalMap.GetLength (1), originalMap.GetLength (2)];
+
+		int currentNumber = 0;
 		for (int i = 0; i < originalMap.GetLength (0); ++i) {
 			for (int j = 0; j < originalMap.GetLength (1); ++j) {
 				for (int k = 0; k < originalMap.GetLength (2); ++k) {
-					if (!originalMap [i, j, k]) {
-						numberBlockMap.Add(number++, new Tuple3<int>(i, j, k));
+					if (originalMap [i, j, k] != null) {
+						currentBlockMap.Add (currentNumber++, new Tuple3<int> (i, j, k));
+					} else {
+						currentMap [i, j, k] = true;
 					}
 				}
 			}
@@ -107,27 +131,30 @@ public class ShuffleAlgorithm {
 
 		// Number each block in the target state
 		bool[, ,] targetMap = m.GetBlockMap();
-		Dictionary<int, Tuple3<int>> numberBlockMap2 = new Dictionary<int, Tuple3<int>> ();
-		number = 0;
+		Dictionary<int, Tuple3<int>> targetBlockMap = new Dictionary<int, Tuple3<int>> ();
+		int targetNumber = 0;
 		for (int i = 0; i < targetMap.GetLength (0); ++i) {
 			for (int j = 0; j < targetMap.GetLength (1); ++j) {
 				for (int k = 0; k < targetMap.GetLength (2); ++k) {
 					if (!targetMap [i, j, k]) {
-						numberBlockMap2.Add(number++, new Tuple3<int>(i, j, k));
+						targetBlockMap.Add(targetNumber++, new Tuple3<int>(i, j, k));
 					}
 				}
 			}
 		}
 
+		if (currentNumber != targetNumber) {
+			Debug.Log ("Error Block Mismatch! Current Blocks: " + currentNumber + " Target Blocks: " + targetNumber);
+			return null;
+		}
+
 		// Move each block to it's target space
 		List<Tuple2<Tuple3<int>>> moves = new List<Tuple2<Tuple3<int>>>();
-		for (int i = 0; i < number; ++i) {
-			Tuple3<int> inital = numberBlockMap [i];
-			Tuple3<int> target = numberBlockMap2 [i];
-
-			// Do a maze search algorithm on the old map, while checking for "new" roadblocks in the current state
-
+		for (int i = 0; i < currentNumber; ++i) {
+			Tuple3<int> inital = currentBlockMap [i];
+			Tuple3<int> target = targetBlockMap [i];
 		}
+
 
 		return moves;
 	}
