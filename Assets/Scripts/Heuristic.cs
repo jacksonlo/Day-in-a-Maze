@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 public enum HeuristicMode {
 	Misplaced,
@@ -58,7 +57,7 @@ public class Heuristic {
 			}
 		}
 
-		Debug.Log ("Current Blocks: " + currentNumber + " Target Blocks: " + targetNumber);
+		Console.Write ("Current Blocks: " + currentNumber + " Target Blocks: " + targetNumber);
 
 		// Get manhattan distance for each numbered block
 		int cost = 0;

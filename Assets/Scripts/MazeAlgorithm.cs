@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -42,7 +42,8 @@ public class MazeAlgorithm {
 			}
 
 			// Pick a (random) neighbour
-			Tuple3<int> newCell = neighbours[Random.Range(0, neighbours.Count)];
+			Random rand = new Random();
+			Tuple3<int> newCell = neighbours[rand.Next(0, neighbours.Count)];
 
 			// Carve to it
 			m.CarveTo(currentCell, newCell);

@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -57,8 +57,8 @@ public class ShuffleAlgorithm {
 				leaves.Remove (qKey);
 			}
 
-			// Check if heuristic is 0
-			if (qKey == 0) {
+			// Check if goal is reached
+			if (Util.MazeMapEquals(node.value, targetMap)) {
 				// Generate path of moves and return
 				List<Tuple2<Tuple3<int> > > moves = new List<Tuple2<Tuple3<int> > >();
 
@@ -104,7 +104,7 @@ public class ShuffleAlgorithm {
 					}
 				}
 			}
-			Debug.Log(childrenCount);
+			Console.Write(childrenCount);
 		}
 		return null;
 	}
@@ -144,7 +144,7 @@ public class ShuffleAlgorithm {
 		}
 
 		if (currentNumber != targetNumber) {
-			Debug.Log ("Error Block Mismatch! Current Blocks: " + currentNumber + " Target Blocks: " + targetNumber);
+			Console.Write ("Error Block Mismatch! Current Blocks: " + currentNumber + " Target Blocks: " + targetNumber);
 			return null;
 		}
 

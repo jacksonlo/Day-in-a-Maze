@@ -16,8 +16,10 @@ public class MazeGenerator : MonoBehaviour {
 	private List<Maze> _mazeList;
 	private float _rotationTime;
 
-	private Queue<GameObject> activeAnimations;
-	private Queue<GameObject> pendingAnimations;
+	private Queue<Block> _activeAnimations;
+	private Queue<Block> _pendingAnimations;
+
+	private ShuffleJob _shuffleJob;
 
 	// Use this for initialization
 	void Start () {
@@ -31,8 +33,21 @@ public class MazeGenerator : MonoBehaviour {
 
 		// Shuffle Maze
 		if (Input.GetKeyDown (KeyCode.Backslash)) {
-			_mazeList[0].ShuffleMaze (MazeAlgorithmMode.GrowingTree);
-			return;
+			if (_shuffleJob == null) {
+				_shuffleJob = new ShuffleJob ();
+				_shuffleJob.maze = _mazeList [0];
+				_shuffleJob.Start ();
+				return;
+			} else {
+				_shuffleJob.Abort ();
+			}
+		}
+
+		// Check if shufflejob is done and set back to null
+		if (_shuffleJob != null) {
+			if (_shuffleJob.Update ()) {
+				_shuffleJob = null;
+			}
 		}
 
 		// Check for rotations and apply them
