@@ -500,7 +500,14 @@ public class Maze {
 	}
 
 	// Get's all neighbours that are blocks
-	public List<Tuple3<int> > GetBlockNeighbours(Tuple3<int> location) {
+	public List<Tuple3<int> > GetBlockNeighbours(Tuple3<int> location, bool[, ,] givenMap = null) {
+		bool[, ,] checkMap;
+		if (givenMap != null) {
+			checkMap = givenMap;	
+		} else {
+			checkMap = _blockMap;
+		}
+
 		int x = location.first;
 		int y = location.second;
 		int z = location.third;
@@ -508,36 +515,39 @@ public class Maze {
 		List<Tuple3<int> > neighbours = new List<Tuple3<int> > ();
 
 		// Top
-		if (y + 2 < mazeDimensions.second && !_blockMap [x, y + 2, z]) {
+		if (y + 2 < mazeDimensions.second && !checkMap [x, y + 2, z]) {
 			neighbours.Add (new Tuple3<int>(x, y + 2, z));
 		}
 
 		// Front
-		if (z + 2 < mazeDimensions.third && !_blockMap [x, y, z + 2]) {
+		if (z + 2 < mazeDimensions.third && !checkMap [x, y, z + 2]) {
 			neighbours.Add (new Tuple3<int>(x, y, z + 2));
 		}
 
 		// Bottom
-		if (y - 2 >= 0 && !_blockMap [x, y - 2, z]) {
+		if (y - 2 >= 0 && !checkMap [x, y - 2, z]) {
 			neighbours.Add (new Tuple3<int>(x, y - 2, z));
 		}
 
 		// Left
-		if (x - 2 >= 0 && !_blockMap [x - 2, y, z]) {
+		if (x - 2 >= 0 && !checkMap [x - 2, y, z]) {
 			neighbours.Add (new Tuple3<int>(x - 2, y, z));
 		}
 
 		// Right
-		if (x + 2 < mazeDimensions.first && !_blockMap [x + 2, y, z]) {
+		if (x + 2 < mazeDimensions.first && !checkMap [x + 2, y, z]) {
 			neighbours.Add (new Tuple3<int>(x + 2, y, z));
 		}
 
 		// Back
-		if (z - 2 >= 0 && !_blockMap [x, y, z - 2]) {
+		if (z - 2 >= 0 && !checkMap [x, y, z - 2]) {
 			neighbours.Add (new Tuple3<int>(x, y, z - 2));
 		}
 
 		return neighbours;
+	}
+	public List<Tuple3<int>> GetBlockNeighbours(int x, int y, int z, bool[, ,] givenMap = null) {
+		return GetBlockNeighbours (new Tuple3<int> (x, y, z), givenMap);
 	}
 
 	// Get all potential neighbours to carve to, ie. it has no neighbouring cells that are already carved

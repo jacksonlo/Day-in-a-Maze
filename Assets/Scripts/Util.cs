@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 public class Util {
 
@@ -29,5 +30,53 @@ public class Util {
 			}
 		}
 		return true;
+	}
+
+	public static bool Move(Tuple3<int> from, Tuple3<int> to, bool[, ,] map) {
+		if (map [from.first, from.second, from.third] != true || map [to.first, to.second, to.third] != false) {
+			Console.Write ("Error in boolean map moving");
+			return false;
+		}
+
+		map [from.first, from.second, from.third] = true;
+		map [to.first, to.second, to.third] = false;
+		return true;
+	}
+
+	public static List<Tuple2<Tuple3<int>>> MakeSpace(Tuple3<int> from, Tuple3<int> to, Maze m, bool[, ,] map) {
+		List<Tuple2<Tuple3<int>>> moves = new List<Tuple2<Tuple3<int>>> ();
+
+		// Get space neighbours of offending block
+		List<Tuple3<int>> spaceNeighbours = m.GetSpaceNeighbours(to, map);
+
+		if (spaceNeighbours.Count > 0) {
+			// Move offending block into space
+			Util.Move (to, spaceNeighbours [0], map);
+			moves.Add (new Tuple2<Tuple3<int>> (to, spaceNeighbours [0]));
+			return moves;
+		} else {
+			// Recurse through block neighbours to get least amount of moves
+			List<Tuple2<Tuple3<int>>> possibleMoves;
+			int min = -1;
+			List<Tuple3<int>> blockNeighbours = m.GetBlockNeighbours (to, map);
+
+			for (int i = 0; i < blockNeighbours.Count; ++i) {
+				possibleMoves = MakeSpace (to, blockNeighbours [i], m, map);
+				if (possibleMoves.Count < min || min == -1) {
+					min = possibleMoves.Count;
+					moves = possibleMoves;
+				}
+			}
+
+			return moves;
+		}
+	}
+
+	public static List<Tuple2<Tuple3<int>>> ReverseMoves(List<Tuple2<Tuple3<int>>> moves) {
+		List<Tuple2<Tuple3<int>>> reversed = new List<Tuple2<Tuple3<int>>> ();
+		for (int i = moves.Count - 1; i >= 0; --i) {
+			reversed.Add (new Tuple2<Tuple3<int>> (moves[i].second, moves[i].first));
+		}
+		return reversed;
 	}
 }

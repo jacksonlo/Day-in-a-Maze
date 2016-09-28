@@ -28,4 +28,8 @@ public class Tuple3<T> {
 		hash = hash * 23 + third.GetHashCode();
 		return hash;
 	}
+
+	public Tuple3<T> DeepClone() {
+		return new Tuple3<T>(first, second, third);
+	}
 }
