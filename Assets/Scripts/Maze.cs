@@ -114,6 +114,11 @@ public class Maze {
 //			// Move extra blocks out of cube range
 //		}
 
+		// Force shift pushing blocks
+
+
+		return;
+
 		// On another thread, A* calculate the moves to sliding puzzle into the maze
 		List<Tuple2<Tuple3<int> > > moves = _shuffleAlgorithm(this, HeuristicMode.MisplacedManhattan);
 
@@ -149,6 +154,12 @@ public class Maze {
 		switch (shuffleMode) {
 		case ShuffleAlgorithmMode.AStar:
 			_shuffleAlgorithm = new ShuffleDelegate (ShuffleAlgorithm.AStar);
+			break;
+		case ShuffleAlgorithmMode.Directed:
+			_shuffleAlgorithm = new ShuffleDelegate (ShuffleAlgorithm.Directed);
+			break;
+		case ShuffleAlgorithmMode.ForceDirected:
+			_shuffleAlgorithm = new ShuffleDelegate (ShuffleAlgorithm.ForceDirected);
 			break;
 		}
 	}
@@ -318,9 +329,9 @@ public class Maze {
 	// Instantiate Maze Block GameObjects into the world
 	public void InstantiateMaze() {
 		// Instantiate Parent
-		Tuple3<float> pivotCenter = new Tuple3<float> (_blockTypes [(int)BlockType.Metal].transform.lossyScale.x * mazeDimensions.first / 2,
-			_blockTypes [(int)BlockType.Metal].transform.lossyScale.y * mazeDimensions.second / 2,
-			_blockTypes [(int)BlockType.Metal].transform.lossyScale.z * mazeDimensions.third / 2);
+		Tuple3<float> pivotCenter = new Tuple3<float> (_blockTypes [(int)BlockType.White].transform.lossyScale.x * mazeDimensions.first / 2,
+			_blockTypes [(int)BlockType.White].transform.lossyScale.y * mazeDimensions.second / 2,
+			_blockTypes [(int)BlockType.White].transform.lossyScale.z * mazeDimensions.third / 2);
 		parent = GameObject.Instantiate(parent, new Vector3(pivotCenter.first, pivotCenter.second, pivotCenter.third), Quaternion.identity) as GameObject;
 
 
@@ -328,7 +339,7 @@ public class Maze {
 			for (int j = 0; j < mazeDimensions.second; ++j) {
 				for (int k = 0; k < mazeDimensions.third; ++k) {
 					if (!_blockMap [i, j, k]) {
-						_blockMaze [i, j, k] = new Block (_blockTypes [(int)BlockType.Metal], parent, i, j, k);
+						_blockMaze [i, j, k] = new Block (_blockTypes [(int)BlockType.White], parent, i, j, k);
 					} else {
 						_blockMaze [i, j, k] = null;
 					}

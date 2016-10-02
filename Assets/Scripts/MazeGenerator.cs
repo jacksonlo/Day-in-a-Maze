@@ -86,7 +86,7 @@ public class MazeGenerator : MonoBehaviour {
 
 			// Growing Tree algorithm
 			maze = new Maze (empty, blockTypes, new Tuple3<int> (mazeX, mazeY, mazeZ), new Tuple3<int> (x, y, z), 
-				MazeAlgorithmMode.GrowingTree, ShuffleAlgorithmMode.Directed);
+				MazeAlgorithmMode.GrowingTree, ShuffleAlgorithmMode.ForceDirected);
 			maze.SetExit (x, y, mazeZ - 1);
 
 			// Calculate Maze
@@ -100,7 +100,7 @@ public class MazeGenerator : MonoBehaviour {
 			// Instantiate Blocks in maze
 			maze.InstantiateMaze ();
 
-			// Generate platforms to entrance and exit
+//			// Generate platforms to entrance and exit
 //			maze.GenerateEntrancePath (path, 10f);
 //			maze.GenerateExitPath (path, 5f);
 //
