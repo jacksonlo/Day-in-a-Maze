@@ -72,6 +72,13 @@ public class MazeGenerator : MonoBehaviour {
 		}
 
 		// Handle shuffle translations
+		if (Input.GetKeyDown (KeyCode.Z)) {
+			//test
+			Block testBlock = (_mazeList[0].GetBlockMaze())[5, 0, 8];
+			testBlock.Move (new Vector3 (8f, 0f, 8f));
+			//Rigidbody body = (_mazeList[0].GetBlockMaze())[5, 0, 8].blockObject.GetComponent<Rigidbody>();
+			//body.AddForce(5.0f, 0f, 0f, ForceMode.Impulse);
+		}
 	}
 
 	// Method to Generate Maze
@@ -87,26 +94,12 @@ public class MazeGenerator : MonoBehaviour {
 			// Growing Tree algorithm
 			maze = new Maze (empty, blockTypes, new Tuple3<int> (mazeX, mazeY, mazeZ), new Tuple3<int> (x, y, z), 
 				MazeAlgorithmMode.GrowingTree, ShuffleAlgorithmMode.ForceDirected);
-			maze.SetExit (x, y, mazeZ - 1);
 
 			// Calculate Maze
 			maze.CalculateMaze ();
 
-//			// Choose an Exit
-//			if (!maze.ChooseExit ()) {
-//				Debug.Log ("Failed to choose an exit");
-//			}
-
 			// Instantiate Blocks in maze
 			maze.InstantiateMaze ();
-
-//			// Generate platforms to entrance and exit
-//			maze.GenerateEntrancePath (path, 10f);
-//			maze.GenerateExitPath (path, 5f);
-//
-//			// Move Character to entrance
-//			Tuple3<int> exitPath = maze.GetExit();
-//			character.transform.position = new Vector3(exitPath.first, exitPath.second, exitPath.third);
 
 			break;
 		}

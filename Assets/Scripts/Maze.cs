@@ -11,13 +11,6 @@ public enum Direction {
 	CounterClockwise
 };
 
-public enum BlockMap {
-	Old,
-	Default,
-	Custom
-};
-
-
 public class Maze {
 	public delegate void AlgorithmDelegate(Maze m);	// Delegate for Maze algorithm
 	public delegate List<Tuple2<Tuple3<int> > > ShuffleDelegate(Maze m, HeuristicMode hm);	// Delegate for Shuffle Algorithm
@@ -30,13 +23,11 @@ public class Maze {
 	public Quaternion targetQ { get; set; }			// Target Rotation Quaternion
 	public GameObject parent { get; set; }			// Empty Parent object containing all the maze block gameobjects
 	public Tuple3<int> startingPosition { get; set; } 	// Coordinates for startingPosition/entrance
-	public Tuple3<int> exitPosition { get; set; }		// Coordinates for exitPosition
 	public Tuple3<int> mazeDimensions;					// Maze Dimensions
 
-	private BlockFace _exitDirection;		// The side of the cube that the exit protrudes from
 	private Block[, ,] _blockMaze;			// 3D array of actual blocks of the maze
-	private bool[, ,] _blockMap;			// 3D array of which block locations, false = block, true = empty space
-	private GameObject[] _blockTypes;		// The blocktypes
+	private bool[, ,] _blockMap;			// 3D array of which block locations for calculations, false = block, true = empty space
+	private GameObject[] _blockTypes;		// The available blocktypes
 	private AlgorithmDelegate _mazeAlgorithm;		// Maze Algorithm delgate set
 	private MazeAlgorithmMode _mazeAlgorithmMode;	// Maze Algorithm Mode set
 	private ShuffleDelegate _shuffleAlgorithm;		// Shuffle Algorithm delegate set
@@ -50,7 +41,6 @@ public class Maze {
 		rotating = false;
 		mazeDimensions = dimensions;
 		this.startingPosition = startingPosition;
-		this.exitPosition = null;
 		_blockTypes = blockTypes;
 
 		_blockMaze = new Block[mazeDimensions.first, mazeDimensions.second, mazeDimensions.third];
@@ -117,10 +107,8 @@ public class Maze {
 		// Force shift pushing blocks
 
 
-		return;
-
 		// On another thread, A* calculate the moves to sliding puzzle into the maze
-		List<Tuple2<Tuple3<int> > > moves = _shuffleAlgorithm(this, HeuristicMode.MisplacedManhattan);
+		List<Tuple2<Tuple3<int>>> moves = _shuffleAlgorithm(this, HeuristicMode.MisplacedManhattan);
 
 		// On another thread execute those moves in sequence, allowing some to run concurrently if they do not block eachother
 		ExecuteMoves(moves);
@@ -130,7 +118,7 @@ public class Maze {
 	}
 
 	// Executes the list of moves
-	public void ExecuteMoves(List<Tuple2<Tuple3<int> > > moves) {
+	public void ExecuteMoves(List<Tuple2<Tuple3<int>>> moves) {
 		// The list is in reverse order so execute from the end
 		for (int i = 0; i < moves.Count; ++i) {
 			Debug.Log (moves [i].first + " -> " + moves [i].second);
@@ -224,108 +212,7 @@ public class Maze {
 			return false;
 		}
 	}
-
-	// Generates platform to entrance
-	public void GenerateEntrancePath(GameObject path, float length) {
-		float width = _blockTypes[0].transform.lossyScale.x;
-		for (int i = 0; i < length; ++i) {
-			GameObject.Instantiate (path, new Vector3 (startingPosition.first * width, startingPosition.second * width - width + 1.25f, startingPosition.third * width - i * width - 6.5f), Quaternion.identity);
-		}
-	}
-
-	// Generates platform out of exit
-	public void GenerateExitPath(GameObject path, float length) {
-		float width = _blockTypes[0].transform.lossyScale.x;
-		Quaternion rotation = Quaternion.identity;
-		switch (_exitDirection) {
-		case BlockFace.Left:
-			rotation = Quaternion.Euler (0, 270, 0);
-			for (int i = 0; i < length; ++i) {
-				GameObject.Instantiate (path, new Vector3 (exitPosition.first * width - i * width - 6.5f, exitPosition.second * width - width + 1.25f, exitPosition.third * width + i * width - 6.5f), rotation);
-			}
-			break;
-		case BlockFace.Right:
-			rotation = Quaternion.Euler (0, 90, 0);
-			for (int i = 0; i < length; ++i) {
-				GameObject.Instantiate (path, new Vector3 (exitPosition.first * width + i * width - 6.5f, exitPosition.second * width - width + 1.25f, exitPosition.third * width), rotation);
-			}
-			break;
-		case BlockFace.Back:
-			rotation = Quaternion.identity;
-			for (int i = 0; i < length; ++i) {
-				GameObject.Instantiate (path, new Vector3 (exitPosition.first * width, exitPosition.second * width - width + 1.25f, exitPosition.third * width + i * width - 6.5f), rotation);
-			}
-			break;
-		}
-	}
-
-	// Returns entrance coordinates
-	public Tuple3<int> GetEntrance() {
-		return startingPosition;
-	}
-
-	// Returns exit coordinates, must be called after ChooseExit
-	public Tuple3<int> GetExit() {
-		return exitPosition;
-	}
-
-	// Chooses an exit
-	public virtual bool ChooseExit() {
-		List<Tuple3<int> > candidateExits = new List<Tuple3<int> > ();
-
-		// Opposite Wall
-		for (int i = 0; i < mazeDimensions.first; ++i) {
-			for (int j = 0; j < mazeDimensions.second; ++j) {
-				if (_blockMap [i, j, mazeDimensions.third - 1]) {
-					candidateExits.Add (new Tuple3<int> (i, j, mazeDimensions.third - 1));
-				}
-			}
-		}
-
-		if (candidateExits.Count > 0) {
-			// Pick a random exit
-			exitPosition = candidateExits [Random.Range (0, candidateExits.Count - 1)];
-			_exitDirection = BlockFace.Back;
-			return true;
-		}
-
-		// Left Wall
-		for (int i = 0; i < mazeDimensions.second; ++i) {
-			for (int j = 0; j < mazeDimensions.third; ++j) {
-				if (_blockMap [0, i, j]) {
-					candidateExits.Add (new Tuple3<int>(0, i, j));
-				}
-			}
-		}
-
-		if (candidateExits.Count > 0) {
-			// Pick a random exit
-			exitPosition = candidateExits [Random.Range (0, candidateExits.Count - 1)];
-			_exitDirection = BlockFace.Left;
-			return true;
-		}
-
-		// Right Wall
-		for (int i = 0; i < mazeDimensions.second; ++i) {
-			for (int j = 0; j < mazeDimensions.third; ++j) {
-				if (_blockMap [mazeDimensions.first - 1, i, j]) {
-					candidateExits.Add (new Tuple3<int>(mazeDimensions.first - 1, i, j));
-				}
-			}
-		}
-
-		if (candidateExits.Count > 0) {
-			// Pick a random exit
-			exitPosition = candidateExits [Random.Range (0, candidateExits.Count - 1)];
-			_exitDirection = BlockFace.Right;
-			return true;
-		}
-
-		// Bottom ??
-
-		return false;
-	}
-
+		
 	// Instantiate Maze Block GameObjects into the world
 	public void InstantiateMaze() {
 		// Instantiate Parent
@@ -334,7 +221,7 @@ public class Maze {
 			_blockTypes [(int)BlockType.White].transform.lossyScale.z * mazeDimensions.third / 2);
 		parent = GameObject.Instantiate(parent, new Vector3(pivotCenter.first, pivotCenter.second, pivotCenter.third), Quaternion.identity) as GameObject;
 
-
+		// Instantiate Blocks
 		for (int i = 0; i < mazeDimensions.first; ++i) {
 			for (int j = 0; j < mazeDimensions.second; ++j) {
 				for (int k = 0; k < mazeDimensions.third; ++k) {
@@ -342,6 +229,39 @@ public class Maze {
 						_blockMaze [i, j, k] = new Block (_blockTypes [(int)BlockType.White], parent, i, j, k);
 					} else {
 						_blockMaze [i, j, k] = null;
+					}
+				}
+			}
+		}
+
+		// Set Block neighbours
+		for (int i = 0; i < mazeDimensions.first; ++i) {
+			for (int j = 0; j < mazeDimensions.second; ++j) {
+				for (int k = 0; k < mazeDimensions.third; ++k) {
+					if (_blockMaze [i, j, k] != null) {
+						// Top
+						int yCheck = j + 1 < mazeDimensions.second ? j + 1 : -1;
+						_blockMaze [i, j, k].neighbours [BlockFace.Top] = yCheck != -1 ? _blockMaze [i, yCheck, k] : null;
+
+						// Bottom
+						yCheck = j - 1 >= 0 ? j - 1 : -1;
+						_blockMaze [i, j, k].neighbours [BlockFace.Bottom] = yCheck != -1 ? _blockMaze [i, yCheck, k] : null;
+
+						// Left
+						int xCheck = i - 1 >= 0 ? i - 1 : -1;
+						_blockMaze [i, j, k].neighbours [BlockFace.Left] = xCheck != -1 ? _blockMaze [xCheck, j, k] : null;
+
+						// Right
+						xCheck = i + 1 < mazeDimensions.first ? i + 1 : -1;
+						_blockMaze [i, j, k].neighbours [BlockFace.Right] = xCheck != -1 ? _blockMaze [xCheck, j, k] : null;
+
+						// Front
+						int zCheck = k - 1 >= 0 ? k - 1 : -1;
+						_blockMaze [i, j, k].neighbours [BlockFace.Front] = zCheck != -1 ? _blockMaze [i, j, zCheck] : null;
+
+						// Back
+						zCheck = k + 1 < mazeDimensions.third ? k + 1 : -1;
+						_blockMaze [i, j, k].neighbours [BlockFace.Back] = zCheck != -1 ? _blockMaze [i, j, zCheck] : null;
 					}
 				}
 			}
@@ -421,7 +341,7 @@ public class Maze {
 	}
 
 	// Get all neighbours that are spaces
-	public List<Tuple3<int> > GetSpaceNeighbours(Tuple3<int> location, bool[, ,] givenMap = null) {
+	public List<Tuple3<int>> GetSpaceNeighbours(Tuple3<int> location, bool[, ,] givenMap = null) {
 		bool[, ,] checkMap;
 		if (givenMap != null) {
 			checkMap = givenMap;	
@@ -467,7 +387,7 @@ public class Maze {
 
 		return neighbours;
 	}
-	public List<Tuple3<int> > GetSpaceNeighbours(int x, int y, int z, bool[, ,] givenMap = null) {
+	public List<Tuple3<int>> GetSpaceNeighbours(int x, int y, int z, bool[, ,] givenMap = null) {
 		return GetSpaceNeighbours (new Tuple3<int> (x, y, z), givenMap);
 	}
 		
@@ -511,7 +431,7 @@ public class Maze {
 	}
 
 	// Get's all neighbours that are blocks
-	public List<Tuple3<int> > GetBlockNeighbours(Tuple3<int> location, bool[, ,] givenMap = null) {
+	public List<Tuple3<int>> GetBlockNeighbours(Tuple3<int> location, bool[, ,] givenMap = null) {
 		bool[, ,] checkMap;
 		if (givenMap != null) {
 			checkMap = givenMap;	
@@ -562,7 +482,7 @@ public class Maze {
 	}
 
 	// Get all potential neighbours to carve to, ie. it has no neighbouring cells that are already carved
-	public List<Tuple3<int> > GetPotentialNeighbours(Tuple3<int> from) {
+	public List<Tuple3<int>> GetPotentialNeighbours(Tuple3<int> from) {
 		List<Tuple3<int> > neighbours = GetBlockNeighbours (from);
 
 		// Check if neighbours are valid, ie. it has no neighbouring cells that are already carved
@@ -592,117 +512,5 @@ public class Maze {
 	public bool HasBlock(Tuple3<int> t) {
 		return HasBlock (t.first, t.second, t.third);
 	}
-
-	// Cuts faces that have not been carved up to the minHoles, returns an int of how many faces were carved
-	public int CarveFullFaces(int minHoles = 0) {
-		int carvedFaces = 0;
-
-		// Check each side to carve
-		int firstD = 0;
-		int secondD = 0;
-		foreach (BlockFace face in System.Enum.GetValues(typeof(BlockFace))) {
-			bool exit = false;
-
-			switch (face) {
-			case BlockFace.Left:
-			case BlockFace.Right:
-				firstD = mazeDimensions.second;
-				secondD = mazeDimensions.third;
-				break;
-			case BlockFace.Top:
-			case BlockFace.Bottom:
-				firstD = mazeDimensions.first;
-				secondD = mazeDimensions.third;
-				break;
-			case BlockFace.Back:
-			case BlockFace.Front:
-				firstD = mazeDimensions.first;
-				secondD = mazeDimensions.second;
-				break;
-			}
-
-			firstD--;
-			secondD--;
-
-			int holeCount = 0;
-			for (int i = 0; i <= firstD; ++i) {
-				for (int j = 0; j <= secondD; ++j) {
-					Tuple3<int> coord = null;
-
-					switch (face) {
-					case BlockFace.Left:
-						coord = new Tuple3<int> (0, firstD, secondD);
-						break;
-					case BlockFace.Right:
-						coord = new Tuple3<int> (mazeDimensions.first - 1, firstD, secondD);
-						break;
-					case BlockFace.Top:
-						coord = new Tuple3<int> (firstD, mazeDimensions.second - 1, secondD);
-						break;
-					case BlockFace.Bottom:
-						coord = new Tuple3<int> (firstD, 0, secondD);
-						break;
-					case BlockFace.Back:
-						coord = new Tuple3<int> (firstD, secondD, mazeDimensions.third - 1);
-						break;
-					case BlockFace.Front:
-						coord = new Tuple3<int> (firstD, secondD, 0);
-						break;
-					}
-
-					if (!HasBlock (coord)) {
-						holeCount++;
-						if (holeCount > minHoles) {
-							exit = true;
-							break;
-						}
-					}
-				}
-				if (exit) {
-					break;
-				}
-			}
-
-			// Carve face
-			if (!exit) {
-				carvedFaces++;
-				for (int i = 0; i < firstD; ++i) {
-					for (int j = 0; j < secondD; ++j) {
-						Tuple3<int> coord = null;
-
-						switch (face) {
-						case BlockFace.Left:
-							coord = new Tuple3<int> (0, firstD, secondD);
-							break;
-						case BlockFace.Right:
-							coord = new Tuple3<int> (mazeDimensions.first - 1, firstD, secondD);
-							break;
-						case BlockFace.Top:
-							coord = new Tuple3<int> (firstD, mazeDimensions.second - 1, secondD);
-							break;
-						case BlockFace.Bottom:
-							coord = new Tuple3<int> (firstD, 0, secondD);
-							break;
-						case BlockFace.Back:
-							coord = new Tuple3<int> (firstD, secondD, mazeDimensions.third - 1);
-							break;
-						case BlockFace.Front:
-							coord = new Tuple3<int> (firstD, secondD, 0);
-							break;
-						}
-						Carve (coord);
-					}
-				}
-			}
-		}
-		return carvedFaces;
-	}
-
-	// Sets the exit position
-	public void SetExit(int x, int y, int z) {
-		this.exitPosition = new Tuple3<int> (x, y, z);
-	}
-	public void SetExit(Tuple3<int> t) {
-		this.exitPosition = t;
-	}
+		
 }

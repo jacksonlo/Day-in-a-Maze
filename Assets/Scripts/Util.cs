@@ -1,4 +1,6 @@
-﻿using System;
+﻿using UnityEngine;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 
 public class Util {
@@ -78,5 +80,71 @@ public class Util {
 			reversed.Add (new Tuple2<Tuple3<int>> (moves[i].second, moves[i].first));
 		}
 		return reversed;
+	}
+
+	public static bool CheckBeforeTarget(Vector3 m, Vector3 a, Vector3 b) {
+		// Check which direction of vector
+		if (m.x != 0) {
+			return m.x > 0 ? a.x <= b.x : a.x >= b.x;
+		} else if (m.y != 0) {
+			return m.y > 0 ? a.y <= b.y : a.y >= b.y;
+		} else {
+			return m.z > 0 ? a.z <= b.z : a.z >= b.z;
+		}
+	}
+
+	public static Vector3 GetBlockFaceVector(BlockFace bf, Transform transform) {
+		Vector3 move = transform.up;
+		switch (bf) {
+		case BlockFace.Top:
+			move = transform.up;
+			break;
+		case BlockFace.Bottom:
+			move = -transform.up;
+			break;
+		case BlockFace.Left:
+			move = -transform.right;
+			break;
+		case BlockFace.Right:
+			move = transform.right;
+			break;
+		case BlockFace.Front:
+			move = transform.forward;
+			break;
+		case BlockFace.Back:
+			move = -transform.forward;
+			break;
+		}
+		return move;
+	}
+
+	public static BlockFace RandomBlockFaceExcept(BlockFace bf) {
+		System.Random rand = new System.Random ();
+		BlockFace returnFace = bf;
+
+		while(returnFace != bf) {
+			switch (rand.Next (0, 6)) {
+			case 0:
+				returnFace = BlockFace.Top;
+				break;
+			case 1:
+				returnFace = BlockFace.Bottom;
+				break;
+			case 2:
+				returnFace = BlockFace.Left;
+				break;
+			case 3:
+				returnFace = BlockFace.Right;
+				break;
+			case 4:
+				returnFace = BlockFace.Front;
+				break;
+			case 5: 
+				returnFace = BlockFace.Back;
+				break;
+			}
+		}
+
+		return returnFace;
 	}
 }
