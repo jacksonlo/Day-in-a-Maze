@@ -1,15 +1,17 @@
 ﻿using System;
+using System.Collections.Generic;
 
 public class ShuffleJob : ThreadedJob
 {
 	public Maze maze;
+	public List<Tuple2<Tuple3<int>>> moves;
 
 	protected override void ThreadFunction()
 	{
-		maze.ShuffleMaze (MazeAlgorithmMode.GrowingTree);
+		moves = maze.ShuffleMaze (MazeAlgorithmMode.GrowingTree);
 	}
 	protected override void OnFinished()
 	{
-		Console.Write("Shuffle Done!");
+		Console.Write("Shuffle Calculations Done!");
 	}	
 }

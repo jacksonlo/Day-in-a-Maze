@@ -3,8 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 
 public enum BlockType {
-	Metal = 0, 
-	White = 1
+	Metal24 = 0, 
+	Metal08 = 1,
+	Metal10 = 2,
+	Metal32 = 3,
+	Metal22 = 4
 };
 public enum BlockFace {Top, Bottom, Left, Right, Front, Back, None};
 

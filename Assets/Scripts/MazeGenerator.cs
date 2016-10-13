@@ -20,6 +20,7 @@ public class MazeGenerator : MonoBehaviour {
 	private Queue<Block> _pendingAnimations;
 
 	private ShuffleJob _shuffleJob;
+	private List<Tuple2<Tuple3<int>>> _moves;
 
 	// Use this for initialization
 	void Start () {
@@ -33,19 +34,16 @@ public class MazeGenerator : MonoBehaviour {
 
 		// Shuffle Maze
 		if (Input.GetKeyDown (KeyCode.Backslash)) {
-			if (_shuffleJob == null) {
-				_shuffleJob = new ShuffleJob ();
-				_shuffleJob.maze = _mazeList [0];
-				_shuffleJob.Start ();
-				return;
-			} else {
-				_shuffleJob.Abort ();
+			_moves = _mazeList [0].ShuffleMaze (MazeAlgorithmMode.GrowingTree);
+			for (int i = 0; i < _moves.Count; ++i) {
+				_mazeList [0].MoveBlock (_moves [i].first, _moves [i].second);
 			}
 		}
 
-		// Check if shufflejob is done and set back to null
+		// Check if shufflejob is done, get moves and set back to null
 		if (_shuffleJob != null) {
 			if (_shuffleJob.Update ()) {
+				_moves = _shuffleJob.moves;
 				_shuffleJob = null;
 			}
 		}
@@ -69,15 +67,6 @@ public class MazeGenerator : MonoBehaviour {
 					m.Rotate (Direction.CounterClockwise);
 				}
 			}
-		}
-
-		// Handle shuffle translations
-		if (Input.GetKeyDown (KeyCode.Z)) {
-			//test
-			Block testBlock = (_mazeList[0].GetBlockMaze())[5, 0, 8];
-			testBlock.Move (new Vector3 (8f, 0f, 8f));
-			//Rigidbody body = (_mazeList[0].GetBlockMaze())[5, 0, 8].blockObject.GetComponent<Rigidbody>();
-			//body.AddForce(5.0f, 0f, 0f, ForceMode.Impulse);
 		}
 	}
 

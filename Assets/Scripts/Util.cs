@@ -147,4 +147,8 @@ public class Util {
 
 		return returnFace;
 	}
+
+	public static Vector3 TupleToVector(Tuple3<int> t) {
+		return new Vector3 (t.first, t.second, t.third);
+	}
 }

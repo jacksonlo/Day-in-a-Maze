@@ -6,8 +6,7 @@ using System.Collections.Generic;
 public class BlockBehaviour : MonoBehaviour {
 
 	public Block block = null;
-	public float blockWidth;
-
+	private float _blockWidth;
 	private bool _magnet;
 	private bool _moving;
 	private Vector3 _attractionPoint;
@@ -17,9 +16,9 @@ public class BlockBehaviour : MonoBehaviour {
 
 	// Use this for initialization
 	void Start () {
-		blockWidth = transform.lossyScale.x;
+		_blockWidth = transform.lossyScale.x;
 
-		_magnet = true;
+		_magnet = false;
 		_moving = false;
 		_rb = GetComponent<Rigidbody> ();
 	}
@@ -43,88 +42,90 @@ public class BlockBehaviour : MonoBehaviour {
 				}
 			} else {
 				if (Util.CheckBeforeTarget (_movementVector, transform.position, _targetPoint)) {
-					_rb.MovePosition (transform.position + _movementVector * Time.deltaTime);
+					_rb.MovePosition(transform.position + _movementVector * 2 * Time.deltaTime);
 				} else {
+					// Debug.Log ("Done Moving!");
 					// Snap position and then get ready for magnetizing back to attractionpoint
 					transform.position = _targetPoint;
 					_moving = false;
-					_movementVector = _movementVector * -1;
+					// _movementVector = _movementVector * -1;
 				}
 			}
 		}
 	}
 
 	public void Move(Vector3 v) {
-		_targetPoint = v;
+		_targetPoint = v * _blockWidth;
+		_movementVector = (_targetPoint - transform.position).normalized;
 		_moving = true;
 		_magnet = false;
 	}
 
-	void OnCollisionEnter(Collision collision) {
-		if (collision.gameObject.name.Contains("Block") && _magnet) {
-			// If it was hit, set attractionPoint, targetPoint and move
-			if (!_moving) {
-				_moving = true;
-				_magnet = false;
-				_attractionPoint = transform.position;
+//	void OnCollisionEnter(Collision collision) {
+//		if (collision.gameObject.name.Contains("Block") && _magnet) {
+//			// If it was hit, set attractionPoint, targetPoint and move
+//			if (!_moving) {
+//				_moving = true;
+//				_magnet = false;
+//				_attractionPoint = transform.position;
+//
+//				// Set movementVector based on where collision occurred
+//				SetMovementVector(GetBlockFaceHit(collision.gameObject, this.gameObject));
+//
+//				// Set the target point after the movement vector
+//				_targetPoint = transform.position + _movementVector;
+//			}
+//		}
+//	}
 
-				// Set movementVector based on where collision occurred
-				SetMovementVector(GetBlockFaceHit(collision.gameObject, this.gameObject));
+//	private void SetMovementVector(BlockFace face) {
+//		// Check available neighbours
+//		List<Vector3> available = new List<Vector3>();
+//		foreach (BlockFace bf in Enum.GetValues(typeof(BlockFace))) {
+//			if(bf == BlockFace.None || block.neighbours[bf] != null) {
+//				continue;
+//			}
+//
+//			Vector3 move = Util.GetBlockFaceVector (bf, transform) * _blockWidth;
+//			available.Add (move);
+//		}
+//
+//		if (available.Count == 0) {
+//			_movementVector = Util.GetBlockFaceVector (Util.RandomBlockFaceExcept (face), transform);
+//		} else {
+//			System.Random random = new System.Random ();
+//			_movementVector = available [random.Next (0, available.Count)];
+//		}
+//	}
 
-				// Set the target point after the movement vector
-				_targetPoint = transform.position + _movementVector;
-			}
-		}
-	}
-
-	private void SetMovementVector(BlockFace face) {
-		// Check available neighbours
-		List<Vector3> available = new List<Vector3>();
-		foreach (BlockFace bf in Enum.GetValues(typeof(BlockFace))) {
-			if(bf == BlockFace.None || block.neighbours[bf] != null) {
-				continue;
-			}
-
-			Vector3 move = Util.GetBlockFaceVector (bf, transform) * blockWidth;
-			available.Add (move);
-		}
-
-		if (available.Count == 0) {
-			_movementVector = Util.GetBlockFaceVector (Util.RandomBlockFaceExcept (face), transform);
-		} else {
-			System.Random random = new System.Random ();
-			_movementVector = available [random.Next (0, available.Count)];
-		}
-	}
-
-	private BlockFace GetBlockFaceHit( GameObject Object, GameObject ObjectHit ){
-
-		BlockFace faceHit = BlockFace.None;
-		RaycastHit MyRayHit;
-		Vector3 direction = (Object.transform.position - ObjectHit.transform.position).normalized;
-		Ray MyRay = new Ray(ObjectHit.transform.position, direction);
-
-		if (Physics.Raycast(MyRay, out MyRayHit)) {
-			if (MyRayHit.collider != null) {
-				Vector3 MyNormal = MyRayHit.normal;
-				MyNormal = MyRayHit.transform.TransformDirection( MyNormal );
-
-				if( MyNormal == MyRayHit.transform.up ) { 
-					faceHit = BlockFace.Top; 
-				} else if( MyNormal == -MyRayHit.transform.up ) { 
-					faceHit = BlockFace.Bottom; 
-				} else if( MyNormal == MyRayHit.transform.forward ) { 
-					faceHit = BlockFace.Front; 
-				} else if( MyNormal == -MyRayHit.transform.forward ) { 
-					faceHit = BlockFace.Back; 
-				} else if( MyNormal == MyRayHit.transform.right ) {
-					faceHit = BlockFace.Right; 
-				} else if( MyNormal == -MyRayHit.transform.right ) {
-					faceHit = BlockFace.Left; 
-				}
-			}    
-		}
-		return faceHit;
-	}
+//	private BlockFace GetBlockFaceHit( GameObject Object, GameObject ObjectHit ){
+//
+//		BlockFace faceHit = BlockFace.None;
+//		RaycastHit MyRayHit;
+//		Vector3 direction = (Object.transform.position - ObjectHit.transform.position).normalized;
+//		Ray MyRay = new Ray(ObjectHit.transform.position, direction);
+//
+//		if (Physics.Raycast(MyRay, out MyRayHit)) {
+//			if (MyRayHit.collider != null) {
+//				Vector3 MyNormal = MyRayHit.normal;
+//				MyNormal = MyRayHit.transform.TransformDirection( MyNormal );
+//
+//				if( MyNormal == MyRayHit.transform.up ) { 
+//					faceHit = BlockFace.Top; 
+//				} else if( MyNormal == -MyRayHit.transform.up ) { 
+//					faceHit = BlockFace.Bottom; 
+//				} else if( MyNormal == MyRayHit.transform.forward ) { 
+//					faceHit = BlockFace.Front; 
+//				} else if( MyNormal == -MyRayHit.transform.forward ) { 
+//					faceHit = BlockFace.Back; 
+//				} else if( MyNormal == MyRayHit.transform.right ) {
+//					faceHit = BlockFace.Right; 
+//				} else if( MyNormal == -MyRayHit.transform.right ) {
+//					faceHit = BlockFace.Left; 
+//				}
+//			}    
+//		}
+//		return faceHit;
+//	}
 
 }

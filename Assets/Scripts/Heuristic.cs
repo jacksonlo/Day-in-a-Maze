@@ -4,7 +4,8 @@ using System.Collections.Generic;
 
 public enum HeuristicMode {
 	Misplaced,
-	MisplacedManhattan
+	MisplacedManhattan,
+	None
 };
 
 public class Heuristic {

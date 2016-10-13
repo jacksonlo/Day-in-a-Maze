@@ -25,6 +25,8 @@ public class Maze {
 	public Tuple3<int> startingPosition { get; set; } 	// Coordinates for startingPosition/entrance
 	public Tuple3<int> mazeDimensions;					// Maze Dimensions
 
+	public BlockType defaultType = BlockType.Metal32; 	// Default block type
+
 	private Block[, ,] _blockMaze;			// 3D array of actual blocks of the maze
 	private bool[, ,] _blockMap;			// 3D array of which block locations for calculations, false = block, true = empty space
 	private GameObject[] _blockTypes;		// The available blocktypes
@@ -52,11 +54,11 @@ public class Maze {
 
 	// Moves a block
 	public void MoveBlock(Tuple3<int> from, Tuple3<int> to) {
-		
+		_blockMaze [from.first, from.second, from.third].Move (Util.TupleToVector(to));
 	}
 
 	// Shuffle Maze, mazeType parameter for type of shuffling algorithm
-	public void ShuffleMaze(MazeAlgorithmMode mazeAlgo = MazeAlgorithmMode.GrowingTree) {
+	public List<Tuple2<Tuple3<int>>> ShuffleMaze(MazeAlgorithmMode mazeAlgo = MazeAlgorithmMode.GrowingTree) {
 		MazeAlgorithmMode originalAlgo = _mazeAlgorithmMode;
 
 		// Generate a maze positioning with the mazeType
@@ -104,17 +106,11 @@ public class Maze {
 //			// Move extra blocks out of cube range
 //		}
 
-		// Force shift pushing blocks
-
-
-		// On another thread, A* calculate the moves to sliding puzzle into the maze
-		List<Tuple2<Tuple3<int>>> moves = _shuffleAlgorithm(this, HeuristicMode.MisplacedManhattan);
-
-		// On another thread execute those moves in sequence, allowing some to run concurrently if they do not block eachother
-		ExecuteMoves(moves);
-
 		// Set algorithm back
 		SetAlgorithm (originalAlgo);
+
+		// On another thread, A* calculate the moves to sliding puzzle into the maze
+		return _shuffleAlgorithm(this, HeuristicMode.None);
 	}
 
 	// Executes the list of moves
@@ -216,9 +212,9 @@ public class Maze {
 	// Instantiate Maze Block GameObjects into the world
 	public void InstantiateMaze() {
 		// Instantiate Parent
-		Tuple3<float> pivotCenter = new Tuple3<float> (_blockTypes [(int)BlockType.White].transform.lossyScale.x * mazeDimensions.first / 2,
-			_blockTypes [(int)BlockType.White].transform.lossyScale.y * mazeDimensions.second / 2,
-			_blockTypes [(int)BlockType.White].transform.lossyScale.z * mazeDimensions.third / 2);
+		Tuple3<float> pivotCenter = new Tuple3<float> (_blockTypes [(int)defaultType].transform.lossyScale.x * mazeDimensions.first / 2,
+		_blockTypes [(int)defaultType].transform.lossyScale.y * mazeDimensions.second / 2,
+		_blockTypes [(int)defaultType].transform.lossyScale.z * mazeDimensions.third / 2);
 		parent = GameObject.Instantiate(parent, new Vector3(pivotCenter.first, pivotCenter.second, pivotCenter.third), Quaternion.identity) as GameObject;
 
 		// Instantiate Blocks
@@ -226,7 +222,7 @@ public class Maze {
 			for (int j = 0; j < mazeDimensions.second; ++j) {
 				for (int k = 0; k < mazeDimensions.third; ++k) {
 					if (!_blockMap [i, j, k]) {
-						_blockMaze [i, j, k] = new Block (_blockTypes [(int)BlockType.White], parent, i, j, k);
+						_blockMaze [i, j, k] = new Block (_blockTypes [(int)defaultType], parent, i, j, k);
 					} else {
 						_blockMaze [i, j, k] = null;
 					}

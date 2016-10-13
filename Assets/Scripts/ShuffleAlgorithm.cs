@@ -262,43 +262,9 @@ public class ShuffleAlgorithm {
 			}
 		}
 
-		if (currentNumber != targetNumber) {
-			Console.Write ("Error Block Mismatch! Current Blocks: " + currentNumber + " Target Blocks: " + targetNumber);
-			return null;
-		}
-
-		// Move each block to it's target space
 		List<Tuple2<Tuple3<int>>> moves = new List<Tuple2<Tuple3<int>>>();
-		for (int i = 0; i < currentNumber; ++i) {
-			Tuple3<int> initial = currentBlockMap [i];
-			Tuple3<int> target = targetBlockMap [i];
-
-			// First move direction
-			int xDir = initial.first <= target.first ? initial.first + 1 : initial.first - 1;
-			int yDir = initial.second <= target.second ? initial.second + 1 : initial.second - 1;
-			int zDir = initial.third <= target.third ? initial.third + 1 : initial.third - 1;
-
-			// Manhattan movement
-			Tuple3<int> from = initial.DeepClone();
-			Tuple3<int> to;
-			for (int a = xDir; a <= target.first; ++a) {
-				to = new Tuple3<int> (a, initial.second, initial.third);
-				moves.Add (new Tuple2<Tuple3<int>> (from, to));
-				from = to.DeepClone ();
-			}
-
-			for (int b = yDir; b <= target.second; ++b) {
-				to = new Tuple3<int> (initial.first, b, initial.third);
-				moves.Add (new Tuple2<Tuple3<int>> (from, to));
-				from = to.DeepClone ();
-
-			}
-
-			for (int c = zDir; c <= target.third; ++c) {
-				to = new Tuple3<int> (initial.first, initial.second, c);
-				moves.Add (new Tuple2<Tuple3<int>> (from, to));
-				from = to.DeepClone ();
-			}
+		for (int i = 0; i < currentBlockMap.Count; ++i) {
+			moves.Add (new Tuple2<Tuple3<int>> (currentBlockMap [i], targetBlockMap [i]));
 		}
 
 		return moves;
