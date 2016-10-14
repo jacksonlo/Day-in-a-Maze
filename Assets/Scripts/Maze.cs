@@ -52,13 +52,41 @@ public class Maze {
 		SetShuffle (shuffleAlgo);
 	}
 
+	// Completes Heartbeat tasks
+	public void Heartbeat() {
+		for (int i = 0; i < _blockMaze.GetLength (0); ++i) {
+			for (int j = 0; j < _blockMaze.GetLength (1); ++j) {
+				for (int k = 0; k < _blockMaze.GetLength (2); ++k) {
+					if (_blockMaze [i, j, k] != null) {
+						_blockMaze [i, j, k].Heartbeat ();
+					}
+				}
+			}
+		}
+	}
+
+	// Gets Trigger ready blocks
+	public List<Block> GetTriggerReadyBlocks() {
+		List<Block> readyBlocks = new List<Block> ();
+		for (int i = 0; i < _blockMaze.GetLength (0); ++i) {
+			for (int j = 0; j < _blockMaze.GetLength (1); ++j) {
+				for (int k = 0; k < _blockMaze.GetLength (2); ++k) {
+					if (_blockMaze[i, j, k] != null && _blockMaze [i, j, k].TriggerReady ()) {
+						readyBlocks.Add (_blockMaze [i, j, k]);
+					}
+				}
+			}
+		}
+		return readyBlocks;
+	}
+
 	// Moves a block
 	public void MoveBlock(Tuple3<int> from, Tuple3<int> to) {
 		_blockMaze [from.first, from.second, from.third].Move (Util.TupleToVector(to));
 	}
 
 	// Shuffle Maze, mazeType parameter for type of shuffling algorithm
-	public List<Tuple2<Tuple3<int>>> ShuffleMaze(MazeAlgorithmMode mazeAlgo = MazeAlgorithmMode.GrowingTree) {
+	public void ShuffleMaze(MazeAlgorithmMode mazeAlgo = MazeAlgorithmMode.GrowingTree) {
 		MazeAlgorithmMode originalAlgo = _mazeAlgorithmMode;
 
 		// Generate a maze positioning with the mazeType
@@ -110,16 +138,17 @@ public class Maze {
 		SetAlgorithm (originalAlgo);
 
 		// On another thread, A* calculate the moves to sliding puzzle into the maze
-		return _shuffleAlgorithm(this, HeuristicMode.None);
+		List<Tuple2<Tuple3<int>>> moves = _shuffleAlgorithm(this, HeuristicMode.None);
+
+		TriggerMoves (moves);
 	}
 
-	// Executes the list of moves
-	public void ExecuteMoves(List<Tuple2<Tuple3<int>>> moves) {
-		// The list is in reverse order so execute from the end
+	// Triggers the list of moves on the blocks
+	public void TriggerMoves(List<Tuple2<Tuple3<int>>> moves) {
+		// Attach the movement targets to each block
 		for (int i = 0; i < moves.Count; ++i) {
-			Debug.Log (moves [i].first + " -> " + moves [i].second);
-			MoveBlock (moves [i].first, moves [i].second);
-			moves.RemoveAt(moves.Count -1);
+			Vector3 v = Util.TupleToVector (moves [i].second);
+			_blockMaze [moves [i].first.first, moves [i].first.second, moves [i].first.third].SetMoveTarget (v);
 		}
 	}
 
@@ -507,6 +536,10 @@ public class Maze {
 	}
 	public bool HasBlock(Tuple3<int> t) {
 		return HasBlock (t.first, t.second, t.third);
+	}
+
+	public Block GetBlock(Tuple3<int> t) {
+		return _blockMaze [t.first, t.second, t.third];
 	}
 		
 }

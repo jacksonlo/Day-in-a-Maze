@@ -3,11 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 
 public enum BlockType {
-	Metal24 = 0, 
-	Metal08 = 1,
-	Metal10 = 2,
-	Metal32 = 3,
-	Metal22 = 4
+	Metal08 = 0, 
+	Metal10 = 1,
+	Metal22 = 2,
+	Metal24 = 3,
+	Metal32 = 4
 };
 public enum BlockFace {Top, Bottom, Left, Right, Front, Back, None};
 
@@ -20,6 +20,7 @@ public class Block {
 	public Dictionary<BlockFace, Block> neighbours;
 
 	private float _width;
+	public BlockBehaviour _bb;
 
 	public Block(GameObject blockType, int x, int y, int z) {
 		this.x = x;
@@ -31,6 +32,7 @@ public class Block {
 		this.blockObject = GameObject.Instantiate (this.blockObject, new Vector3(x * _width, y * _width, z * _width), Quaternion.identity) as GameObject;
 
 		InitializeNeighbours ();
+		_bb = blockObject.GetComponent<BlockBehaviour> ();
 	}
 
 	public Block(GameObject blockType, GameObject parent, int x, int y, int z) {
@@ -44,6 +46,7 @@ public class Block {
 		this.blockObject.transform.parent = parent.transform;
 
 		InitializeNeighbours ();
+		_bb = blockObject.GetComponent<BlockBehaviour> ();
 	}
 
 	private void InitializeNeighbours() {
@@ -57,12 +60,36 @@ public class Block {
 	}
 
 	public void SetBlock() {
-		BlockBehaviour bb = blockObject.GetComponent<BlockBehaviour> ();
-		bb.block = this;
+		_bb.block = this;
 	}
 
-	public void Move(Vector3 v) {
-		BlockBehaviour bb = blockObject.GetComponent<BlockBehaviour> ();
-		bb.Move (v);
+	public void Move(Vector3 v, bool gridPoint = true) {
+		_bb.Move (v, gridPoint);
+	}
+
+	public void Move() {
+		_bb.Move ();
+	}
+		
+	public void SetMoveTarget(Vector3 v, bool gridPoint = true) {
+		_bb.SetMoveTarget (v, true);
+	}
+		
+	public void Heartbeat() {
+		if (!_bb.IsMoving () && _bb.OffAnchor()) {
+			_bb.Magnetize ();
+		}
+	}
+
+	public bool TriggerReady() {
+		return _bb.TriggerReady();
+	}
+
+	public bool IsMoving() {
+		return _bb.IsMoving ();
+	}
+
+	public bool OffAnchor() {
+		return _bb.OffAnchor();
 	}
 }

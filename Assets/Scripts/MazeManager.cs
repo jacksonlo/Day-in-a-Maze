@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class MazeGenerator : MonoBehaviour {
+public class MazeManager : MonoBehaviour {
 
 	public Camera character;
 	public GameObject[] blockTypes;
@@ -16,17 +16,20 @@ public class MazeGenerator : MonoBehaviour {
 	private List<Maze> _mazeList;
 	private float _rotationTime;
 
-	private Queue<Block> _activeAnimations;
-	private Queue<Block> _pendingAnimations;
+	private List<Block> _activeBlocks;
+	private Stack<Block> _pendingBlocks;
 
-	private ShuffleJob _shuffleJob;
-	private List<Tuple2<Tuple3<int>>> _moves;
+	private bool _shuffle;
 
 	// Use this for initialization
 	void Start () {
 		// Generate maze
 		_mazeList = new List<Maze> ();
 		_mazeList.Add(GenerateMaze (MazeAlgorithmMode.GrowingTree));
+
+		_shuffle = false;
+		_activeBlocks = new List<Block> ();
+		_pendingBlocks = new Stack<Block> ();
 	}
 
 	// Update is called once per frame
@@ -34,20 +37,43 @@ public class MazeGenerator : MonoBehaviour {
 
 		// Shuffle Maze
 		if (Input.GetKeyDown (KeyCode.Backslash)) {
-			_moves = _mazeList [0].ShuffleMaze (MazeAlgorithmMode.GrowingTree);
-			for (int i = 0; i < _moves.Count; ++i) {
-				_mazeList [0].MoveBlock (_moves [i].first, _moves [i].second);
-			}
+			_mazeList [0].ShuffleMaze (MazeAlgorithmMode.GrowingTree);
+			_shuffle = true;
 		}
 
-		// Check if shufflejob is done, get moves and set back to null
-		if (_shuffleJob != null) {
-			if (_shuffleJob.Update ()) {
-				_moves = _shuffleJob.moves;
-				_shuffleJob = null;
-			}
+		if (Input.GetKeyDown (KeyCode.Z)) {
+			_mazeList [0].Heartbeat ();
 		}
 
+		// Place trigger ready blocks into action queues
+		if (_shuffle) {
+			List<Block> readyBlocks = _mazeList [0].GetTriggerReadyBlocks ();
+			for(int i = readyBlocks.Count - 1; i >= 0; --i) {
+				_pendingBlocks.Push (readyBlocks [i]);
+			}
+			_shuffle = false;
+		}
+
+		// Action Queues
+		if (_activeBlocks.Count > 0) {
+			for (int i = 0; i < _activeBlocks.Count; ++i) {
+				if (!_activeBlocks [i].IsMoving ()) {
+					_activeBlocks [i].Move ();
+
+					// Bump target spot's block to front of queue if exists
+					Vector3 target = _activeBlocks[i]._bb.GetTarget();
+					if (_mazeList [0].HasBlock((int)target.x, (int)target.y, (int)target.z)) {
+						_pendingBlocks.Push (_mazeList [0].GetBlock (Util.VectorToTuple (target)));
+					}
+
+				} else if(!_activeBlocks[i].OffAnchor()) {
+					_activeBlocks.RemoveAt (i--);
+				}
+			}
+		} else if(_pendingBlocks.Count > 0) {
+			_activeBlocks.Add(_pendingBlocks.Pop ());
+		}
+			
 		// Check for rotations and apply them
 		foreach (Maze m in _mazeList) {
 			if (m.rotating) {

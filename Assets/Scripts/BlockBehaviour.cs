@@ -7,7 +7,6 @@ public class BlockBehaviour : MonoBehaviour {
 
 	public Block block = null;
 	private float _blockWidth;
-	private bool _magnet;
 	private bool _moving;
 	private Vector3 _attractionPoint;
 	private Vector3 _movementVector;
@@ -18,47 +17,70 @@ public class BlockBehaviour : MonoBehaviour {
 	void Start () {
 		_blockWidth = transform.lossyScale.x;
 
-		_magnet = false;
 		_moving = false;
 		_rb = GetComponent<Rigidbody> ();
+		_rb.constraints = RigidbodyConstraints.FreezeRotation;
+		_attractionPoint = transform.position;
 	}
 	
 	// Update is called once per frame
-	void Update () {
-	
-	}
-
-	void FixedUpdate() {
+	void Update() {
 		// Moving towards target
 		if (_moving) {
-			if (_magnet) {
-				// Magnetizing back to attraction point
-				if (Util.CheckBeforeTarget (_movementVector, transform.position, _attractionPoint)) {
-					_rb.MovePosition (transform.position + _movementVector * Time.deltaTime);
-				} else {
-					// Snap position and then turn magnet back on
-					transform.position = _attractionPoint;
-					_magnet = true;
-				}
+			if (Util.CheckBeforeTarget (_movementVector, transform.position, _targetPoint)) {
+				_rb.MovePosition(transform.position + _movementVector * 2 * Time.deltaTime);
 			} else {
-				if (Util.CheckBeforeTarget (_movementVector, transform.position, _targetPoint)) {
-					_rb.MovePosition(transform.position + _movementVector * 2 * Time.deltaTime);
-				} else {
-					// Debug.Log ("Done Moving!");
-					// Snap position and then get ready for magnetizing back to attractionpoint
-					transform.position = _targetPoint;
-					_moving = false;
-					// _movementVector = _movementVector * -1;
-				}
+				// Debug.Log ("Done Moving!");
+				// Snap position and then get ready for magnetizing back to attractionpoint
+				transform.position = _targetPoint;
+				_moving = false;
+				SetKinematic (false);
+				_attractionPoint = transform.position;
 			}
 		}
 	}
 
-	public void Move(Vector3 v) {
-		_targetPoint = v * _blockWidth;
+	// Gridpoint refers to if it is a point reference on the maze grid rather than a realspace coordinate
+	public void Move(Vector3 v, bool gridPoint = true) {
+		_targetPoint = gridPoint ? v * _blockWidth : v;
 		_movementVector = (_targetPoint - transform.position).normalized;
 		_moving = true;
-		_magnet = false;
+		SetKinematic (true);
+	}
+
+	public void Move() {
+		_moving = true;
+		SetKinematic (true);
+	}
+
+	public void SetKinematic(bool b) {
+		_rb.isKinematic = b;
+	}
+
+	public void SetMoveTarget(Vector3 v, bool gridPoint = true) {
+		_targetPoint = gridPoint ? v * _blockWidth : v;
+		_movementVector = (_targetPoint - transform.position).normalized;
+	}
+
+	// Returns true if current position is not on the attraction point
+	public bool OffAnchor() {
+		return transform.position != _attractionPoint;
+	}
+
+	public void Magnetize() {
+		Move (_attractionPoint, false);
+	}
+
+	public bool IsMoving() {
+		return _moving;
+	}
+
+	public bool TriggerReady() {
+		return !_moving && transform.position != _targetPoint;
+	}
+
+	public Vector3 GetTarget(bool gridPoint = true) {
+		return gridPoint ? _targetPoint / _blockWidth : _targetPoint;
 	}
 
 //	void OnCollisionEnter(Collision collision) {

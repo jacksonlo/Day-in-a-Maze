@@ -151,4 +151,8 @@ public class Util {
 	public static Vector3 TupleToVector(Tuple3<int> t) {
 		return new Vector3 (t.first, t.second, t.third);
 	}
+
+	public static Tuple3<int> VectorToTuple(Vector3 v) {
+		return new Tuple3<int> ((int)v.x, (int)v.y, (int)v.z);
+	}
 }
