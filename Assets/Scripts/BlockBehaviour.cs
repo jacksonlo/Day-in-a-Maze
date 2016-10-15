@@ -21,6 +21,7 @@ public class BlockBehaviour : MonoBehaviour {
 		_rb = GetComponent<Rigidbody> ();
 		_rb.constraints = RigidbodyConstraints.FreezeRotation;
 		_attractionPoint = transform.position;
+		SetKinematic (true);
 	}
 	
 	// Update is called once per frame
@@ -34,7 +35,7 @@ public class BlockBehaviour : MonoBehaviour {
 				// Snap position and then get ready for magnetizing back to attractionpoint
 				transform.position = _targetPoint;
 				_moving = false;
-				SetKinematic (false);
+				//SetKinematic (false);
 				_attractionPoint = transform.position;
 			}
 		}

@@ -49,30 +49,26 @@ public class MazeManager : MonoBehaviour {
 		if (_shuffle) {
 			List<Block> readyBlocks = _mazeList [0].GetTriggerReadyBlocks ();
 			for(int i = readyBlocks.Count - 1; i >= 0; --i) {
+				//readyBlocks [i].Move ();
 				_pendingBlocks.Push (readyBlocks [i]);
 			}
 			_shuffle = false;
 		}
 
-		// Action Queues
-		if (_activeBlocks.Count > 0) {
-			for (int i = 0; i < _activeBlocks.Count; ++i) {
-				if (!_activeBlocks [i].IsMoving ()) {
-					_activeBlocks [i].Move ();
 
-					// Bump target spot's block to front of queue if exists
-					Vector3 target = _activeBlocks[i]._bb.GetTarget();
-					if (_mazeList [0].HasBlock((int)target.x, (int)target.y, (int)target.z)) {
-						_pendingBlocks.Push (_mazeList [0].GetBlock (Util.VectorToTuple (target)));
-					}
-
-				} else if(!_activeBlocks[i].OffAnchor()) {
-					_activeBlocks.RemoveAt (i--);
+		if ((int)Time.deltaTime % 5 == 0) {
+			int batchSize = 10;
+			if (_activeBlocks.Count < batchSize && _pendingBlocks.Count > 0) {
+				while (_activeBlocks.Count < batchSize && _pendingBlocks.Count > 0) {
+					_activeBlocks.Add (_pendingBlocks.Pop ());
 				}
 			}
-		} else if(_pendingBlocks.Count > 0) {
-			_activeBlocks.Add(_pendingBlocks.Pop ());
 		}
+
+		for (int i = 0; i < _activeBlocks.Count; ++i) {
+			_activeBlocks [i].Move ();
+		}
+		_activeBlocks.Clear ();
 			
 		// Check for rotations and apply them
 		foreach (Maze m in _mazeList) {
@@ -93,6 +89,12 @@ public class MazeManager : MonoBehaviour {
 					m.Rotate (Direction.CounterClockwise);
 				}
 			}
+		}
+	}
+
+	void FixedUpdate() {
+		if ((int)Time.deltaTime % 3 == 0) {
+			_mazeList [0].Heartbeat ();
 		}
 	}
 

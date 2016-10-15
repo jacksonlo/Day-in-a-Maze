@@ -10,7 +10,7 @@ public enum Direction {
 	Clockwise, 
 	CounterClockwise
 };
-
+	
 public class Maze {
 	public delegate void AlgorithmDelegate(Maze m);	// Delegate for Maze algorithm
 	public delegate List<Tuple2<Tuple3<int> > > ShuffleDelegate(Maze m, HeuristicMode hm);	// Delegate for Shuffle Algorithm
@@ -25,7 +25,7 @@ public class Maze {
 	public Tuple3<int> startingPosition { get; set; } 	// Coordinates for startingPosition/entrance
 	public Tuple3<int> mazeDimensions;					// Maze Dimensions
 
-	public BlockType defaultType = BlockType.Metal32; 	// Default block type
+	public BlockType defaultType = BlockType.Metal10; 	// Default block type
 
 	private Block[, ,] _blockMaze;			// 3D array of actual blocks of the maze
 	private bool[, ,] _blockMap;			// 3D array of which block locations for calculations, false = block, true = empty space
