@@ -93,14 +93,15 @@ public class MazeManager : MonoBehaviour {
 	}
 
 	void FixedUpdate() {
-		if ((int)Time.deltaTime % 3 == 0) {
-			_mazeList [0].Heartbeat ();
-		}
+//		if ((int)Time.realtimeSinceStartup % 5 == 0) {
+//			_mazeList [0].Heartbeat ();
+//		}
 	}
 
 	// Method to Generate Maze
 	private Maze GenerateMaze(MazeAlgorithmMode mazeGenType) {
 		Maze maze = null;
+
 		switch(mazeGenType) {
 		case MazeAlgorithmMode.GrowingTree:
 			// Get starting cell for algorithm

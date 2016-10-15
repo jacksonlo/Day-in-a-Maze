@@ -6,6 +6,7 @@ using System.Collections.Generic;
 public class BlockBehaviour : MonoBehaviour {
 
 	public Block block = null;
+	public float moveSpeed = 10;
 	private float _blockWidth;
 	private bool _moving;
 	private Vector3 _attractionPoint;
@@ -20,7 +21,7 @@ public class BlockBehaviour : MonoBehaviour {
 		_moving = false;
 		_rb = GetComponent<Rigidbody> ();
 		_rb.constraints = RigidbodyConstraints.FreezeRotation;
-		_attractionPoint = transform.position;
+		_attractionPoint = _rb.position;
 		SetKinematic (true);
 	}
 	
@@ -28,25 +29,25 @@ public class BlockBehaviour : MonoBehaviour {
 	void Update() {
 		// Moving towards target
 		if (_moving) {
-			if (Util.CheckBeforeTarget (_movementVector, transform.position, _targetPoint)) {
-				_rb.MovePosition(transform.position + _movementVector * 2 * Time.deltaTime);
+			// Re-evaluate targetpoint incase direction in case misalignment
+			//SetMoveTarget (_targetPoint, false);
+			if (Util.CheckBeforeTarget (_movementVector, _rb.position, _targetPoint)) {
+				_rb.MovePosition(_rb.position + _movementVector * moveSpeed * Time.deltaTime);
 			} else {
 				// Debug.Log ("Done Moving!");
 				// Snap position and then get ready for magnetizing back to attractionpoint
-				transform.position = _targetPoint;
+				_rb.position = _targetPoint;
 				_moving = false;
 				//SetKinematic (false);
-				_attractionPoint = transform.position;
+				_attractionPoint = _rb.position;
 			}
 		}
 	}
 
 	// Gridpoint refers to if it is a point reference on the maze grid rather than a realspace coordinate
 	public void Move(Vector3 v, bool gridPoint = true) {
-		_targetPoint = gridPoint ? v * _blockWidth : v;
-		_movementVector = (_targetPoint - transform.position).normalized;
-		_moving = true;
-		SetKinematic (true);
+		SetMoveTarget (v, gridPoint);
+		Move ();
 	}
 
 	public void Move() {
@@ -60,12 +61,12 @@ public class BlockBehaviour : MonoBehaviour {
 
 	public void SetMoveTarget(Vector3 v, bool gridPoint = true) {
 		_targetPoint = gridPoint ? v * _blockWidth : v;
-		_movementVector = (_targetPoint - transform.position).normalized;
+		_movementVector = (_targetPoint - _rb.position).normalized;
 	}
 
 	// Returns true if current position is not on the attraction point
 	public bool OffAnchor() {
-		return transform.position != _attractionPoint;
+		return _rb.position != _attractionPoint;
 	}
 
 	public void Magnetize() {
@@ -77,7 +78,7 @@ public class BlockBehaviour : MonoBehaviour {
 	}
 
 	public bool TriggerReady() {
-		return !_moving && transform.position != _targetPoint;
+		return !_moving && _rb.position != _targetPoint;
 	}
 
 	public Vector3 GetTarget(bool gridPoint = true) {
