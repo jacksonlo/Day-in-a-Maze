@@ -294,7 +294,7 @@ public class Maze {
 		}
 
 		// Notify Occulusion Culling
-		Camera.main.SendMessage("MazeReady");
+		Camera.main.SendMessage("MazeReady", this);
 	}
 
 	// Calculate Maze based on set algorithm

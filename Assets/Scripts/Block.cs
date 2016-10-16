@@ -59,6 +59,17 @@ public class Block {
 		neighbours.Add (BlockFace.Back, null);
 	}
 
+	public void Render(bool b) {
+		Renderer rend = blockObject.GetComponent<Renderer> ();
+		if(rend.enabled != b) {
+			rend.enabled = b;
+		}
+	}
+
+	public bool IsRendered() {
+		return blockObject.GetComponent<Renderer> ().enabled;
+	}
+
 	public void SetBlock() {
 		_bb.block = this;
 	}
