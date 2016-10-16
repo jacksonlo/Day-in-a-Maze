@@ -40,6 +40,7 @@ public class Maze {
 		MazeAlgorithmMode mazeAlgo = MazeAlgorithmMode.GrowingTree, ShuffleAlgorithmMode shuffleAlgo = ShuffleAlgorithmMode.AStar) {
 
 		parent = mazeParent;
+		parent.tag = "Maze";
 		rotating = false;
 		mazeDimensions = dimensions;
 		this.startingPosition = startingPosition;
@@ -291,6 +292,9 @@ public class Maze {
 				}
 			}
 		}
+
+		// Notify Occulusion Culling
+		Camera.main.SendMessage("MazeReady");
 	}
 
 	// Calculate Maze based on set algorithm
