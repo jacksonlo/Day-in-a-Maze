@@ -105,8 +105,8 @@ public class MazeManager : MonoBehaviour {
 		switch(mazeGenType) {
 		case MazeAlgorithmMode.GrowingTree:
 			// Get starting cell for algorithm
-			int x = (int)Mathf.Ceil (mazeX / 2);
-			int y = (int)Mathf.Ceil (2 * mazeY / 3);
+			int x = 0;
+			int y = mazeY - 1;
 			int z = 0;
 
 			// Growing Tree algorithm
@@ -118,6 +118,8 @@ public class MazeManager : MonoBehaviour {
 
 			// Instantiate Blocks in maze
 			maze.InstantiateMaze ();
+
+			maze.GenerateGraph ();
 
 			break;
 		}

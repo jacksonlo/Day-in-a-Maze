@@ -24,6 +24,7 @@ public class Maze {
 	public GameObject parent { get; set; }			// Empty Parent object containing all the maze block gameobjects
 	public Tuple3<int> startingPosition { get; set; } 	// Coordinates for startingPosition/entrance
 	public Tuple3<int> mazeDimensions;					// Maze Dimensions
+	public Graph<Tuple3<int>> mazeGraph;
 
 	public BlockType defaultType = BlockType.Metal10; 	// Default block type
 
@@ -544,6 +545,36 @@ public class Maze {
 
 	public Block GetBlock(Tuple3<int> t) {
 		return _blockMaze [t.first, t.second, t.third];
+	}
+
+	public void GenerateGraph() {
+		// BFS graph creation
+		mazeGraph = new Graph<Tuple3<int>>();
+
+		HashSet<Node<Tuple3<int>>> visited = new HashSet<Node<Tuple3<int>>> ();
+		Queue<Node<Tuple3<int>>> q = new Queue<Node<Tuple3<int>>> ();
+
+		Node<Tuple3<int>> root = new Node<Tuple3<int>> (startingPosition);
+		q.Enqueue(root);
+		mazeGraph.Add (root);
+
+		while (q.Count > 0) {
+			Node<Tuple3<int>> current = q.Dequeue ();
+			visited.Add (current);
+
+			List<Tuple3<int>> neighbours = GetSpaceNeighbours (current.value);
+			current.AddRange(neighbours);
+
+			for (int i = 0; i < current.neighbours.Count; ++i) {
+				if (!visited.Contains (current.neighbours [i])) {
+					q.Enqueue (current.neighbours [i]);
+					mazeGraph.Add (current.neighbours [i]);
+				}
+			}
+		}
+
+		// Notify Occulusion Culling
+		Camera.main.SendMessage("MazeGraphReady", this);
 	}
 		
 }

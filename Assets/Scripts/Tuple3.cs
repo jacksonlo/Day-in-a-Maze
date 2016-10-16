@@ -14,8 +14,9 @@ public class Tuple3<T> {
 
 	public override bool Equals (object obj) {
 		// Check for null values and compare run-time types.
-		if (obj == null || GetType() != obj.GetType()) 
+		if (obj == null || GetType () != obj.GetType ()) {
 			return false;
+		}
 
 		Tuple3<T> t = (Tuple3<T>)obj;
 		return EqualityComparer<T>.Default.Equals(first, t.first) && EqualityComparer<T>.Default.Equals(second, t.second) && EqualityComparer<T>.Default.Equals(third, t.third);

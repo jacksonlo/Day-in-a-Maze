@@ -75,10 +75,17 @@ public class Block {
 	}
 
 	public void Move(Vector3 v, bool gridPoint = true) {
+		x = (int)v.x;
+		y = (int)v.y;
+		z = (int)v.z;
 		_bb.Move (v, gridPoint);
 	}
 
 	public void Move() {
+		Vector3 t = _bb.GetTarget ();
+		x = (int)t.x;
+		y = (int)t.y;
+		z = (int)t.z;
 		_bb.Move ();
 	}
 		
