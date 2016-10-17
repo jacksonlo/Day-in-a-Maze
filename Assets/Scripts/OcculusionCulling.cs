@@ -66,13 +66,12 @@ public class OcculusionCulling : MonoBehaviour {
 		return a;
 	}
 		
-	public void MazeReady(Maze maze) {
-		_maze = maze;
+	public void MazeReady() {
+		//_maze = GameObject.FindGameObjectWithTag("Maze");
 		_mazeReady = true;
 	}
 
-	public void MazeGraphReady(Maze maze) {
-		_maze = maze;
+	public void MazeGraphReady() {
 		_mazeGraphReady = true;
 	}
 

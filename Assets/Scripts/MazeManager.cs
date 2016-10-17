@@ -48,6 +48,7 @@ public class MazeManager : MonoBehaviour {
 		// Place trigger ready blocks into action queues
 		if (_shuffle) {
 			List<Block> readyBlocks = _mazeList [0].GetTriggerReadyBlocks ();
+			Util.Shuffle (readyBlocks);
 			for(int i = readyBlocks.Count - 1; i >= 0; --i) {
 				//readyBlocks [i].Move ();
 				_pendingBlocks.Push (readyBlocks [i]);
@@ -56,7 +57,7 @@ public class MazeManager : MonoBehaviour {
 		}
 
 
-		if ((int)Time.deltaTime % 5 == 0) {
+		if ((int)Time.realtimeSinceStartup % 5 == 0) {
 			int batchSize = 10;
 			if (_activeBlocks.Count < batchSize && _pendingBlocks.Count > 0) {
 				while (_activeBlocks.Count < batchSize && _pendingBlocks.Count > 0) {

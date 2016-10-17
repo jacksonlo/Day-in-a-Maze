@@ -295,7 +295,8 @@ public class Maze {
 		}
 
 		// Notify Occulusion Culling
-		Camera.main.SendMessage("MazeReady", this);
+		//Camera.main.GetComponent<OcculusionCulling>().SendMessage("MazeReady");
+		//Camera.main.SendMessage("MazeReady", this);
 	}
 
 	// Calculate Maze based on set algorithm
@@ -574,7 +575,8 @@ public class Maze {
 		}
 
 		// Notify Occulusion Culling
-		Camera.main.SendMessage("MazeGraphReady", this);
+		//Camera.main.GetComponent<OcculusionCulling>().SendMessage("MazeGraphReady");
+		//Camera.main.SendMessage("MazeGraphReady", this);
 	}
 		
 }

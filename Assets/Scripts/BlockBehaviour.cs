@@ -6,7 +6,7 @@ using System.Collections.Generic;
 public class BlockBehaviour : MonoBehaviour {
 
 	public Block block = null;
-	public float moveSpeed = 10;
+	public float moveSpeed;
 	private float _blockWidth;
 	private bool _moving;
 	private Vector3 _attractionPoint;
@@ -23,6 +23,7 @@ public class BlockBehaviour : MonoBehaviour {
 		_rb.constraints = RigidbodyConstraints.FreezeRotation;
 		_attractionPoint = _rb.position;
 		SetKinematic (true);
+		moveSpeed = 1;
 	}
 	
 	// Update is called once per frame
