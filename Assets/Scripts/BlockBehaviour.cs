@@ -23,7 +23,7 @@ public class BlockBehaviour : MonoBehaviour {
 		_rb.constraints = RigidbodyConstraints.FreezeRotation;
 		_attractionPoint = _rb.position;
 		SetKinematic (true);
-		moveSpeed = 1;
+		moveSpeed = 2; // Make speed a function of -x^2 over the total distance
 	}
 	
 	// Update is called once per frame

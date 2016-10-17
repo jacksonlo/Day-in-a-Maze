@@ -14,6 +14,9 @@ public class GameManager : MonoBehaviour {
 		if (Input.GetKeyDown (KeyCode.T)) {
 			Debug.Log ("Restarting");
 			RestartCurrentScene ();
+		} else if (Input.GetKeyDown(KeyCode.X)) {
+			Debug.Log ("Gravity Change!");
+			Physics.gravity = new Vector3(0, 1.0F, 0);
 		}
 	}
 

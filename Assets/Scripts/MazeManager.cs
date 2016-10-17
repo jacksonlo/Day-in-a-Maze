@@ -49,7 +49,7 @@ public class MazeManager : MonoBehaviour {
 		if (_shuffle) {
 			List<Block> readyBlocks = _mazeList [0].GetTriggerReadyBlocks ();
 			Util.Shuffle (readyBlocks);
-			for(int i = readyBlocks.Count - 1; i >= 0; --i) {
+			for(int i = 0; i < readyBlocks.Count; ++i) {
 				//readyBlocks [i].Move ();
 				_pendingBlocks.Push (readyBlocks [i]);
 			}
@@ -57,8 +57,8 @@ public class MazeManager : MonoBehaviour {
 		}
 
 
-		if ((int)Time.realtimeSinceStartup % 5 == 0) {
-			int batchSize = 10;
+		if ((int)Time.realtimeSinceStartup % 30 == 0) {
+			int batchSize = 5;
 			if (_activeBlocks.Count < batchSize && _pendingBlocks.Count > 0) {
 				while (_activeBlocks.Count < batchSize && _pendingBlocks.Count > 0) {
 					_activeBlocks.Add (_pendingBlocks.Pop ());
